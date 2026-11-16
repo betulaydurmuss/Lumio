@@ -44,6 +44,7 @@ model Organization {
   enrollments    Enrollment[]
   lessonProgress LessonProgress[]
   quizAttempts   QuizAttempt[]
+  certificates   Certificate[]
   wishlist       WishlistItem[]
 
   @@map("organizations")
@@ -73,6 +74,7 @@ model User {
   enrollments        Enrollment[]
   lessonProgress     LessonProgress[]
   quizAttempts       QuizAttempt[]
+  certificates       Certificate[]
   wishlist           WishlistItem[]
   instructorProfile  Instructor?
 
@@ -412,4 +414,54 @@ model QuizAttempt {
   @@index([userId, courseId])
   @@index([orgId])
   @@map("quiz_attempts")
+}
+
+// ---- Certificates -------------------------------------------------------------
+
+/// Ed25519 keys that sign certificates. The private key is stored encrypted with
+/// ENCRYPTION_KEY; the public key is published so anyone can check a signature.
+model SigningKey {
+  id         String    @id
+  algorithm  String    @default("Ed25519")
+  publicKey  String    @map("public_key")
+  privateKey String    @map("private_key")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  /// A retired key no longer signs, but still verifies what it signed.
+  retiredAt  DateTime? @map("retired_at")
+
+  @@map("signing_keys")
+}
+
+/// Everything printed on the certificate is copied here when it is issued and
+/// covered by the signature, so a later rename cannot change an issued document.
+model Certificate {
+  id             String    @id @default(uuid()) @db.Uuid
+  certNo         String    @unique @map("cert_no")
+  orgId          String    @map("org_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  courseId       String    @map("course_id") @db.Uuid
+  enrollmentId   String    @unique @map("enrollment_id") @db.Uuid
+  /// Shown in the QR link. Without it the public page masks the holder's name.
+  verifyCode     String    @map("verify_code")
+  recipientName  String    @map("recipient_name")
+  /// Null for personal accounts, which have no organization to print.
+  orgName        String?   @map("org_name")
+  courseTitleTr  String    @map("course_title_tr")
+  courseTitleEn  String    @map("course_title_en")
+  instructorName String    @map("instructor_name")
+  hours          Int
+  startedAt      DateTime  @map("started_at")
+  completedAt    DateTime  @map("completed_at")
+  issuedAt       DateTime  @default(now()) @map("issued_at")
+  signature      String
+  keyId          String    @map("key_id")
+  revokedAt      DateTime? @map("revoked_at")
+  revokedReason  String?   @map("revoked_reason")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@index([userId])
+  @@map("certificates")
 }
