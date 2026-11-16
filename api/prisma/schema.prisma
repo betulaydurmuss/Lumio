@@ -38,11 +38,12 @@ model Organization {
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
 
-  users       User[]
-  sessions    Session[]
-  auditLogs   AuditLog[]
-  enrollments Enrollment[]
-  wishlist    WishlistItem[]
+  users          User[]
+  sessions       Session[]
+  auditLogs      AuditLog[]
+  enrollments    Enrollment[]
+  lessonProgress LessonProgress[]
+  wishlist       WishlistItem[]
 
   @@map("organizations")
 }
@@ -69,6 +70,7 @@ model User {
   auditLogs          AuditLog[]
   verificationTokens EmailVerification[]
   enrollments        Enrollment[]
+  lessonProgress     LessonProgress[]
   wishlist           WishlistItem[]
   instructorProfile  Instructor?
 
@@ -267,8 +269,17 @@ model Lesson {
   durationMinutes Int        @map("duration_minutes")
   /// Free preview lessons can be opened from the course page without enrolling.
   isPreview       Boolean    @default(false) @map("is_preview")
+  /// Reading and interactive content, validated against lessonBodySchema. Null until written.
+  bodyTr          Json?      @map("body_tr")
+  bodyEn          Json?      @map("body_en")
+  /// Keys in the media store, never public paths. Served only through signed, expiring links.
+  videoKey        String?    @map("video_key")
+  captionsTrKey   String?    @map("captions_tr_key")
+  captionsEnKey   String?    @map("captions_en_key")
+  videoSeconds    Int?       @map("video_seconds")
 
-  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  section  Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
 
   @@unique([sectionId, position])
   @@map("lessons")
@@ -314,4 +325,25 @@ model SearchTerm {
 
   @@index([count])
   @@map("search_terms")
+}
+
+/// One row per learner and lesson. Written only for lessons of courses the learner is enrolled in.
+model LessonProgress {
+  id              String    @id @default(uuid()) @db.Uuid
+  orgId           String    @map("org_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  lessonId        String    @map("lesson_id") @db.Uuid
+  courseId        String    @map("course_id") @db.Uuid
+  positionSeconds Int       @default(0) @map("position_seconds")
+  completedAt     DateTime? @map("completed_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson       Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId, courseId])
+  @@index([orgId])
+  @@map("lesson_progress")
 }
