@@ -16,10 +16,11 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-# Migrations run from this stage, because the Prisma CLI is a dev dependency.
+# Migrations and the demo catalog run from this stage, because the Prisma CLI
+# and tsx are dev dependencies. The seed is idempotent, so restarts are safe.
 FROM build AS migrate
 WORKDIR /app/api
-CMD ["npx", "prisma", "migrate", "deploy"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts"]
 
 FROM build AS prod-deps
 RUN npm prune --omit=dev --workspaces --include-workspace-root
