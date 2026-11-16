@@ -33,10 +33,14 @@ function localeOf(req: Request): Locale {
   return parsed.success ? parsed.data : 'tr';
 }
 
-/** A published course with its lessons in reading order and its quizzes. */
+/**
+ * A course with its lessons in reading order and its quizzes. Unpublished courses
+ * load too: taking a course off the catalog must not take it away from the
+ * learners already enrolled. Each route hides it from everyone else.
+ */
 async function loadCourse(prisma: PrismaClient, slug: string) {
   const course = await prisma.course.findFirst({
-    where: { slug, status: 'published' },
+    where: { slug },
     include: {
       sections: {
         orderBy: { position: 'asc' },
@@ -160,6 +164,9 @@ export function learnRouter(services: Services): Router {
     const loaded = await loadCourse(prisma, slugParam.parse(req.params.slug));
     const { course, lessons, quizzes } = loaded;
     const enrolled = await isEnrolled(req.auth, course.id);
+    if (course.status !== 'published' && !enrolled) {
+      throw new HttpError(404, 'not_found', 'Course not found');
+    }
     const state = enrolled && req.auth ? await learnerState(req.auth, course.id) : null;
     const lessonsDone = state ? allLessonsDone(loaded, state) : false;
 
@@ -225,6 +232,9 @@ export function learnRouter(services: Services): Router {
     if (!lesson) throw new HttpError(404, 'not_found', 'Lesson not found');
 
     const enrolled = await isEnrolled(req.auth, course.id);
+    if (!enrolled && course.status !== 'published') {
+      throw new HttpError(404, 'not_found', 'Lesson not found');
+    }
     if (!enrolled && !lesson.isPreview) {
       throw new HttpError(403, 'not_enrolled', 'Enrol in the course to open this lesson');
     }
