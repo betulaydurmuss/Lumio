@@ -155,5 +155,11 @@ export type CourseDetail = z.infer<typeof courseDetailSchema>;
 export const learningItemSchema = z.object({
   course: courseCardSchema,
   enrolledAt: z.string(),
+  progress: z.object({
+    completed: z.number().int(),
+    total: z.number().int(),
+    percent: z.number().int(),
+  }),
+  resumeLessonId: z.string().nullable(),
 });
 export type LearningItem = z.infer<typeof learningItemSchema>;
