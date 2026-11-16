@@ -110,7 +110,24 @@ implementation is used today, and an S3-compatible one can replace it without to
 routes. Every video lesson in the demo plays the same 30-second clip in
 [api/media/demo](api/media/demo) until real lessons are recorded.
 
-Quizzes and the signed certificate are the next sprints of the MVP.
+### Quizzes
+
+A section can end with a quiz, and a course can end with a final exam that stays locked until
+every lesson is done. The pass mark is 70% unless a quiz sets its own. Questions reach the browser
+without their answers; the server grades each attempt and keeps every one of them.
+
+After a section quiz the learner sees which answers were right and why, because that quiz is for
+learning. After a failed final exam they only see which questions were wrong: showing the right
+answers there would let the next attempt be passed by copying them. Once the exam is passed,
+everything is explained.
+
+![A graded section quiz](docs/screenshots/quiz.png)
+
+A course is complete when every lesson is done and every quiz is passed. The enrolment records
+that moment once, even if two requests finish the course at the same time, and the completion is
+written to the audit log. Progress bars count lessons and quizzes alike.
+
+The signed, verifiable certificate is the next sprint of the MVP.
 
 ## Repository layout
 
