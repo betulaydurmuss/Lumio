@@ -2,16 +2,17 @@ import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { createLogger } from '../src/logger.js';
+import { buildServices, FakeMailer, MemoryReplayGuard, testPrisma } from './helpers.js';
 
 const up = async () => true;
 
 function appWith(database: () => Promise<boolean>, redis: () => Promise<boolean>) {
   return createApp({
     logger: createLogger('silent'),
-    webOrigin: 'http://localhost:5173',
     cookieSecret: 'x'.repeat(32),
     version: 'test',
     checks: { database, redis },
+    services: buildServices(testPrisma(), new FakeMailer(), new MemoryReplayGuard()),
   });
 }
 
@@ -42,6 +43,7 @@ describe('GET /api/health', () => {
     expect(res.headers['strict-transport-security']).toContain('max-age=');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['content-security-policy']).toContain("default-src 'none'");
+    expect(res.headers['cache-control']).toBe('no-store');
     expect(res.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
   });
 
@@ -50,7 +52,7 @@ describe('GET /api/health', () => {
       .get('/api/health')
       .set('Origin', 'https://evil.example');
 
-    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5174');
   });
 
   it('answers unknown routes with a JSON 404', async () => {
