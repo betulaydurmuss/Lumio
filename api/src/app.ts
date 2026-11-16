@@ -10,6 +10,7 @@ import { csrfProtection } from './middleware/csrf.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { authRouter, type AuthRouterOptions } from './routes/auth.js';
 import { healthRouter, type HealthChecks } from './routes/health.js';
+import { catalogRouter, learningRouter } from './routes/catalog.js';
 import { orgRouter } from './routes/org.js';
 import type { Services } from './services.js';
 
@@ -84,6 +85,8 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api', csrfProtection);
   app.use('/api/auth', authRouter(deps.services, deps.auth));
   app.use('/api/org', orgRouter(deps.services));
+  app.use('/api/catalog', catalogRouter(deps.services));
+  app.use('/api/me', learningRouter(deps.services));
 
   app.use(notFound);
   app.use(errorHandler);
