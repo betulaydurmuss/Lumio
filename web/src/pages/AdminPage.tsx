@@ -1,11 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-import { authApi } from '../api/auth.js';
+import { Link, useSearchParams } from 'react-router';
+import { useAuditLog, useOrgStats } from '../api/admin.js';
 import { useOrgCertificates, useRevokeCertificate } from '../api/certificates.js';
 import { ApiError } from '../api/client.js';
+import { MembersPanel } from '../components/admin/MembersPanel.js';
+import { StatTiles, StatTilesSkeleton } from '../components/admin/StatTiles.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
+
+const TABS = ['overview', 'members', 'certificates', 'audit'] as const;
+type Tab = (typeof TABS)[number];
 
 function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'medium' }).format(
@@ -13,22 +17,51 @@ function formatDate(value: string, locale: string) {
   );
 }
 
-export function AdminPage() {
+function AuditCard() {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? 'tr';
-  const members = useQuery({
-    queryKey: ['org', 'members'],
-    queryFn: authApi.members,
-    retry: false,
-  });
-  const audit = useQuery({
-    queryKey: ['org', 'audit'],
-    queryFn: authApi.auditLogs,
-    retry: false,
-    enabled: members.isSuccess,
-  });
+  const audit = useAuditLog();
+  return (
+    <article className="card">
+      <h3>{t('admin.audit')}</h3>
+      <p className="hint">{t('admin.auditLead')}</p>
+      {audit.isPending && <div className="skeleton" style={{ height: 96 }} />}
+      {audit.isError && <ErrorAlert error={audit.error} />}
+      {audit.data?.length === 0 && <p className="empty">{t('admin.noAudit')}</p>}
+      {audit.data && audit.data.length > 0 && (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('admin.when')}</th>
+                <th>{t('admin.action')}</th>
+                <th>{t('admin.ip')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {audit.data.map((entry) => (
+                <tr key={entry.id}>
+                  <td className="mono">{formatDate(entry.createdAt, locale)}</td>
+                  <td className="mono">{entry.action}</td>
+                  <td className="mono">{entry.ipAddress ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </article>
+  );
+}
 
-  const needsMfa = members.error instanceof ApiError && members.error.code === 'mfa_required';
+export function AdminPage() {
+  const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const requested = params.get('tab');
+  const tab: Tab = TABS.includes(requested as Tab) ? (requested as Tab) : 'overview';
+  // The stats call doubles as the gate: it fails with mfa_required until 2FA is on.
+  const stats = useOrgStats();
+  const needsMfa = stats.error instanceof ApiError && stats.error.code === 'mfa_required';
 
   return (
     <div className="wrap page">
@@ -36,8 +69,8 @@ export function AdminPage() {
         <h2>{t('admin.title')}</h2>
       </header>
 
-      {members.isError && (
-        <ErrorAlert error={members.error}>
+      {stats.isError && (
+        <ErrorAlert error={stats.error}>
           {needsMfa && (
             <p style={{ margin: '8px 0 0' }}>
               <Link to="/account" className="btn btn-primary btn-sm">
@@ -48,74 +81,46 @@ export function AdminPage() {
         </ErrorAlert>
       )}
 
-      {!members.isError && (
-        <div className="stack">
-          <article className="card">
-            <h3>{t('admin.members')}</h3>
-            {members.isPending && <div className="skeleton" style={{ height: 96 }} />}
-            {members.data?.length === 0 && <p className="empty">{t('admin.noMembers')}</p>}
-            {members.data && members.data.length > 0 && (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>{t('admin.name')}</th>
-                      <th>{t('admin.email')}</th>
-                      <th>{t('admin.role')}</th>
-                      <th>{t('admin.verified')}</th>
-                      <th>{t('admin.twoFactor')}</th>
-                      <th>{t('admin.joined')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.data.map((member) => (
-                      <tr key={member.id}>
-                        <td>{member.displayName}</td>
-                        <td>{member.email}</td>
-                        <td>{t(`account.roles.${member.role}`)}</td>
-                        <td>{member.emailVerified ? t('admin.yes') : t('admin.no')}</td>
-                        <td>{member.twoFactorEnabled ? t('admin.yes') : t('admin.no')}</td>
-                        <td className="mono">{formatDate(member.createdAt, locale)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </article>
+      {!stats.isError && (
+        <>
+          <div className="tabs" role="tablist">
+            {TABS.map((name) => (
+              <button
+                key={name}
+                type="button"
+                role="tab"
+                className="tab"
+                aria-selected={tab === name}
+                onClick={() => setParams(name === 'overview' ? {} : { tab: name })}
+              >
+                {t(`adminTabs.${name}`)}
+              </button>
+            ))}
+          </div>
 
-          <article className="card">
-            <h3>{t('admin.audit')}</h3>
-            <p className="hint">{t('admin.auditLead')}</p>
-            {audit.isPending && <div className="skeleton" style={{ height: 96 }} />}
-            {audit.isError && <ErrorAlert error={audit.error} />}
-            {audit.data?.length === 0 && <p className="empty">{t('admin.noAudit')}</p>}
-            {audit.data && audit.data.length > 0 && (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>{t('admin.when')}</th>
-                      <th>{t('admin.action')}</th>
-                      <th>{t('admin.ip')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {audit.data.map((entry) => (
-                      <tr key={entry.id}>
-                        <td className="mono">{formatDate(entry.createdAt, locale)}</td>
-                        <td className="mono">{entry.action}</td>
-                        <td className="mono">{entry.ipAddress ?? '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </article>
-
-          <CertificatesCard />
-        </div>
+          <div role="tabpanel">
+            {tab === 'overview' &&
+              (stats.data ? (
+                <StatTiles
+                  items={(
+                    [
+                      'members',
+                      'pendingInvitations',
+                      'enrollments',
+                      'completions',
+                      'certificates',
+                      'disabledMembers',
+                    ] as const
+                  ).map((key) => ({ label: t(`adminStats.${key}`), value: stats.data[key] }))}
+                />
+              ) : (
+                <StatTilesSkeleton count={6} />
+              ))}
+            {tab === 'members' && <MembersPanel />}
+            {tab === 'certificates' && <CertificatesCard />}
+            {tab === 'audit' && <AuditCard />}
+          </div>
+        </>
       )}
     </div>
   );

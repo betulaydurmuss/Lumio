@@ -56,6 +56,7 @@ function AccountNav() {
       {rolesRequiringTwoFactor.includes(me.data.role) && (
         <NavLink to="/admin">{t('nav.admin')}</NavLink>
       )}
+      {me.data.role === 'platform_admin' && <NavLink to="/platform">{t('nav.platform')}</NavLink>}
       <NavLink to="/certificates">{t('nav.certificates')}</NavLink>
       <NavLink to="/account">{t('nav.account')}</NavLink>
       <button type="button" className="btn btn-secondary btn-sm" onClick={() => void signOut()}>

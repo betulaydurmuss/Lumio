@@ -23,6 +23,10 @@ const KNOWN = new Set([
   'invalid_link',
   'invalid_certificate',
   'attempt_limit',
+  'cannot_change_self',
+  'last_admin',
+  'not_a_company',
+  'email_taken',
 ]);
 
 export function errorKey(error: unknown): string {

@@ -9,7 +9,8 @@
     "signOut": "Çıkış yap",
     "signUp": "Kaydol",
     "certificates": "Sertifikalarım",
-    "verify": "Sertifika doğrula"
+    "verify": "Sertifika doğrula",
+    "platform": "Platform"
   },
   "home": {
     "pill": "Web · Siber güvenlik · KVKK",
@@ -73,7 +74,11 @@
     "quiz_locked": "Kurs sonu sınavı, bütün dersleri bitirdiğinde açılır.",
     "invalid_link": "Bu bağlantı geçersiz. Sertifikadaki QR kodu kullan.",
     "invalid_certificate": "Bu sertifika doğrulamadan geçemedi.",
-    "attempt_limit": "Bugünlük deneme hakkın doldu. 24 saat içinde tekrar deneyebilirsin."
+    "attempt_limit": "Bugünlük deneme hakkın doldu. 24 saat içinde tekrar deneyebilirsin.",
+    "cannot_change_self": "Kendi hesabını buradan değiştiremezsin.",
+    "last_admin": "Kurumda en az bir aktif yönetici kalmalı.",
+    "not_a_company": "Davet yalnızca kurum hesaplarında gönderilebilir.",
+    "email_taken": "Bu e-posta adresiyle zaten bir Lumio hesabı var. Giriş yapmayı dene."
   },
   "signIn": {
     "title": "Giriş yap",
@@ -406,5 +411,77 @@
     "reasonPlaceholder": "Örn. yanlışlıkla verildi",
     "confirm": "İptal etmeyi onayla",
     "cancel": "Vazgeç"
+  },
+  "adminTabs": {
+    "overview": "Genel bakış",
+    "members": "Üyeler",
+    "certificates": "Sertifikalar",
+    "audit": "Denetim kaydı"
+  },
+  "adminStats": {
+    "members": "Üye",
+    "disabledMembers": "Dondurulmuş hesap",
+    "pendingInvitations": "Bekleyen davet",
+    "enrollments": "Kurs kaydı",
+    "completions": "Tamamlanan kurs",
+    "certificates": "Geçerli sertifika"
+  },
+  "members": {
+    "invite": "Ekibe davet et",
+    "inviteLead": "Davet edilen kişiye bir bağlantı gönderilir; bağlantı 7 gün geçerli ve tek kullanımlıktır.",
+    "email": "E-posta",
+    "role": "Rol",
+    "send": "Davet gönder",
+    "sent": "{{email}} adresine davet gönderildi.",
+    "pending": "Bekleyen davetler",
+    "noPending": "Bekleyen davet yok.",
+    "expires": "Son geçerlilik: {{date}}",
+    "expired": "Süresi doldu",
+    "cancelInvite": "Daveti iptal et",
+    "status": "Durum",
+    "active": "Aktif",
+    "disabled": "Dondurulmuş",
+    "deactivate": "Hesabı dondur",
+    "reactivate": "Hesabı aç",
+    "you": "Sen",
+    "changeRole": "{{name}} için rol"
+  },
+  "invitePage": {
+    "title": "Lumio’ya hoş geldin",
+    "lead": "{{organization}} seni {{role}} olarak ekibine davet etti.",
+    "email": "E-posta",
+    "name": "Ad soyad",
+    "password": "Şifre",
+    "submit": "Hesabımı oluştur",
+    "done": "Hesabın hazır. Şimdi giriş yapabilirsin.",
+    "signIn": "Giriş yap",
+    "invalid": "Bu davet geçersiz ya da süresi dolmuş. Kurum yöneticinden yeni bir davet iste."
+  },
+  "platform": {
+    "title": "Platform yönetimi",
+    "lead": "Bütün kurumların özeti. Bu sayfada kişisel veri değil, yalnızca sayılar gösterilir.",
+    "organizations": "Kurumlar",
+    "users": "Kullanıcı",
+    "enrollments": "Kurs kaydı",
+    "completions": "Tamamlanan",
+    "certificates": "Geçerli sertifika",
+    "publishedCourses": "Yayındaki kurs",
+    "orgName": "Kurum",
+    "kind": "Tür",
+    "kinds": {
+      "personal": "Bireysel",
+      "company": "Kurum"
+    },
+    "members": "Üye",
+    "created": "Oluşturulma",
+    "courses": "Kurslar",
+    "coursesLead": "Yayından kaldırılan kurs katalogdan çıkar; kayıtlı öğrenciler erişmeye devam eder.",
+    "course": "Kurs",
+    "status": "Durum",
+    "published": "Yayında",
+    "draft": "Yayında değil",
+    "unpublish": "Yayından kaldır",
+    "publish": "Yayınla",
+    "personalAccount": "Bireysel hesap"
   }
 }

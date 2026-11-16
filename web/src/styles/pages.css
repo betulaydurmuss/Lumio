@@ -276,3 +276,86 @@
   outline: 2px solid var(--amber-500);
   outline-offset: 2px;
 }
+
+/* Stat cards from the design system */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px 20px;
+}
+.stat .n {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--navy-800);
+}
+.stat .l {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Members and invitations */
+.invite-form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 12px;
+}
+.invite-form .field {
+  margin: 0;
+}
+.invite-form .alert {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.invitation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.invitation-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-2);
+}
+.invitation-list li > span {
+  display: flex;
+  flex-direction: column;
+}
+.invitation-list .hint {
+  margin: 0;
+}
+.input-compact {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.row-muted td {
+  color: var(--faint);
+}
+.table td .badge {
+  margin-left: 6px;
+}
+.table td:first-child .badge {
+  vertical-align: middle;
+}
+
+@media (max-width: 720px) {
+  .invite-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.table td.mono {
+  white-space: nowrap;
+}

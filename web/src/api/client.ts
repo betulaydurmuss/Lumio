@@ -60,7 +60,7 @@ function refreshSession(): Promise<boolean> {
 const NO_REFRESH = new Set(['/api/auth/login', '/api/auth/login/totp', '/api/auth/refresh']);
 
 export async function api<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   options: { body?: unknown; schema?: z.ZodType<T> } = {},
 ): Promise<T> {

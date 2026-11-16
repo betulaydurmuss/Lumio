@@ -9,7 +9,8 @@
     "signOut": "Sign out",
     "signUp": "Sign up",
     "certificates": "My certificates",
-    "verify": "Verify a certificate"
+    "verify": "Verify a certificate",
+    "platform": "Platform"
   },
   "home": {
     "pill": "Web · Cybersecurity · KVKK",
@@ -73,7 +74,11 @@
     "quiz_locked": "The final exam opens once you have finished every lesson.",
     "invalid_link": "This link is not valid. Use the QR code on the certificate.",
     "invalid_certificate": "This certificate failed verification.",
-    "attempt_limit": "You have used today’s attempts. You can try again within 24 hours."
+    "attempt_limit": "You have used today’s attempts. You can try again within 24 hours.",
+    "cannot_change_self": "You cannot change your own account here.",
+    "last_admin": "The organization needs at least one active admin.",
+    "not_a_company": "Only company accounts can send invitations.",
+    "email_taken": "This address already has a Lumio account. Try signing in."
   },
   "signIn": {
     "title": "Sign in",
@@ -406,5 +411,77 @@
     "reasonPlaceholder": "e.g. issued in error",
     "confirm": "Confirm revocation",
     "cancel": "Cancel"
+  },
+  "adminTabs": {
+    "overview": "Overview",
+    "members": "Members",
+    "certificates": "Certificates",
+    "audit": "Audit log"
+  },
+  "adminStats": {
+    "members": "Members",
+    "disabledMembers": "Deactivated accounts",
+    "pendingInvitations": "Pending invitations",
+    "enrollments": "Course enrolments",
+    "completions": "Completed courses",
+    "certificates": "Valid certificates"
+  },
+  "members": {
+    "invite": "Invite to the team",
+    "inviteLead": "The person receives a link that is valid for 7 days and can be used once.",
+    "email": "Email",
+    "role": "Role",
+    "send": "Send invitation",
+    "sent": "An invitation was sent to {{email}}.",
+    "pending": "Pending invitations",
+    "noPending": "No pending invitations.",
+    "expires": "Valid until {{date}}",
+    "expired": "Expired",
+    "cancelInvite": "Cancel invitation",
+    "status": "Status",
+    "active": "Active",
+    "disabled": "Deactivated",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "you": "You",
+    "changeRole": "Role for {{name}}"
+  },
+  "invitePage": {
+    "title": "Welcome to Lumio",
+    "lead": "{{organization}} invited you to join their team as {{role}}.",
+    "email": "Email",
+    "name": "Full name",
+    "password": "Password",
+    "submit": "Create my account",
+    "done": "Your account is ready. You can sign in now.",
+    "signIn": "Sign in",
+    "invalid": "This invitation is invalid or has expired. Ask your organization admin for a new one."
+  },
+  "platform": {
+    "title": "Platform administration",
+    "lead": "A summary of every organization. This page shows numbers, never personal data.",
+    "organizations": "Organizations",
+    "users": "Users",
+    "enrollments": "Course enrolments",
+    "completions": "Completed",
+    "certificates": "Valid certificates",
+    "publishedCourses": "Published courses",
+    "orgName": "Organization",
+    "kind": "Type",
+    "kinds": {
+      "personal": "Personal",
+      "company": "Company"
+    },
+    "members": "Members",
+    "created": "Created",
+    "courses": "Courses",
+    "coursesLead": "An unpublished course leaves the catalog; learners already enrolled keep their access.",
+    "course": "Course",
+    "status": "Status",
+    "published": "Published",
+    "draft": "Not published",
+    "unpublish": "Unpublish",
+    "publish": "Publish",
+    "personalAccount": "Personal account"
   }
 }
