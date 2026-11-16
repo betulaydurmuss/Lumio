@@ -1,0 +1,152 @@
+/* ---- Certificate verification ---- */
+.verify-form {
+  margin-top: 18px;
+  max-width: 520px;
+}
+.verify-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-700);
+  margin-bottom: 6px;
+}
+.verify-form .input {
+  flex: 1;
+  min-width: 220px;
+  text-transform: uppercase;
+}
+.verify-result {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.verify-status {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 20px 22px;
+  border-radius: var(--r-lg);
+  border: 1px solid;
+}
+.verify-status strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+.verify-status p {
+  margin: 4px 0 0;
+}
+.verify-status.valid {
+  background: var(--success-bg);
+  border-color: #bfe6cd;
+  color: #14633a;
+}
+.verify-status.revoked {
+  background: var(--warning-bg);
+  border-color: #f6d9a8;
+  color: #8a5410;
+}
+.verify-status.invalid {
+  background: var(--danger-bg);
+  border-color: #f3c6c6;
+  color: #991b1b;
+}
+.verify-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.verify-details {
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.verify-details dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.verify-details dd {
+  margin: 2px 0 0;
+}
+.verify-details dd .hint {
+  display: block;
+}
+.signature-ok {
+  color: var(--success);
+  font-size: 13px;
+}
+.signature-bad {
+  color: var(--danger);
+  font-size: 13px;
+}
+.verify-preview {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.verify-preview img,
+.certificate-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--r);
+  box-shadow: var(--sh-2);
+  background: #fffdf7;
+}
+.verify-how {
+  max-width: 760px;
+}
+.verify-how p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ---- My certificates ---- */
+.certificate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+.certificate-card {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+.certificate-body h3 {
+  margin-bottom: 4px;
+}
+.certificate-body .hint {
+  margin: 0 0 10px;
+}
+.certificate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.empty-results > svg {
+  color: var(--amber-600);
+}
+
+/* ---- Admin revoke ---- */
+.revoke-form {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 320px;
+}
+.revoke-form .input {
+  flex: 1;
+  min-width: 160px;
+  padding: 7px 10px;
+}
+
+@media (max-width: 860px) {
+  .verify-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
