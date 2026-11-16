@@ -43,6 +43,7 @@ model Organization {
   auditLogs      AuditLog[]
   enrollments    Enrollment[]
   lessonProgress LessonProgress[]
+  quizAttempts   QuizAttempt[]
   wishlist       WishlistItem[]
 
   @@map("organizations")
@@ -71,6 +72,7 @@ model User {
   verificationTokens EmailVerification[]
   enrollments        Enrollment[]
   lessonProgress     LessonProgress[]
+  quizAttempts       QuizAttempt[]
   wishlist           WishlistItem[]
   instructorProfile  Instructor?
 
@@ -238,6 +240,7 @@ model Course {
   sections     Section[]
   enrollments  Enrollment[]
   wishlistedBy WishlistItem[]
+  quizzes      Quiz[]
 
   @@index([status, categoryId])
   @@index([status, enrollmentCount])
@@ -254,6 +257,7 @@ model Section {
 
   course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons Lesson[]
+  quiz    Quiz?
 
   @@unique([courseId, position])
   @@map("sections")
@@ -286,11 +290,13 @@ model Lesson {
 }
 
 model Enrollment {
-  id        String   @id @default(uuid()) @db.Uuid
-  orgId     String   @map("org_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  courseId  String   @map("course_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  orgId       String    @map("org_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  courseId    String    @map("course_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  /// Set once every lesson is done and every quiz passed. Certificates are issued from this.
+  completedAt DateTime? @map("completed_at")
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -346,4 +352,64 @@ model LessonProgress {
   @@index([userId, courseId])
   @@index([orgId])
   @@map("lesson_progress")
+}
+
+// ---- Assessment ---------------------------------------------------------------
+
+/// A section quiz belongs to one section; the final exam has no section and opens
+/// once every lesson is done. Correct answers never leave the server before grading.
+model Quiz {
+  id          String  @id @default(uuid()) @db.Uuid
+  courseId    String  @map("course_id") @db.Uuid
+  sectionId   String? @unique @map("section_id") @db.Uuid
+  titleTr     String  @map("title_tr")
+  titleEn     String  @map("title_en")
+  passPercent Int     @default(70) @map("pass_percent")
+
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  section   Section?       @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@index([courseId])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String   @id @default(uuid()) @db.Uuid
+  quizId        String   @map("quiz_id") @db.Uuid
+  position      Int
+  promptTr      String   @map("prompt_tr")
+  promptEn      String   @map("prompt_en")
+  optionsTr     String[] @map("options_tr")
+  optionsEn     String[] @map("options_en")
+  correctIndex  Int      @map("correct_index")
+  explanationTr String   @map("explanation_tr")
+  explanationEn String   @map("explanation_en")
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, position])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  quizId    String   @map("quiz_id") @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  /// The chosen option index for each question, in question order.
+  answers   Int[]
+  score     Int
+  passed    Boolean
+  createdAt DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz         Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId, courseId])
+  @@index([orgId])
+  @@map("quiz_attempts")
 }
