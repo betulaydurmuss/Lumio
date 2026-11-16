@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "catalog": "Kurslar",
+    "business": "Kurumlar için",
+    "signIn": "Giriş yap",
+    "language": "Dil"
+  },
+  "home": {
+    "pill": "Web · Siber güvenlik · KVKK",
+    "title": "Güvenli bir ortamda öğren, ilerlemeni kanıtla",
+    "lead": "Animasyonlu dersler, sınavlar ve doğrulanabilir sertifikalarla web geliştirme, siber güvenlik ve KVKK uyum eğitimi.",
+    "browse": "Kursları keşfet",
+    "forTeams": "Ekibini eğit",
+    "pillars": {
+      "learn": {
+        "title": "Etkileşimli dersler",
+        "body": "Video, animasyonlu modüller ve tarayıcı içi alıştırmalarla adım adım öğren."
+      },
+      "prove": {
+        "title": "Doğrulanabilir sertifika",
+        "body": "Her sertifika dijital olarak imzalanır ve belge numarasıyla herkes tarafından doğrulanabilir."
+      },
+      "comply": {
+        "title": "Kurumsal uyum",
+        "body": "Çalışanlarına eğitim ata, ilerlemeyi izle ve KVKK uyumunu raporla."
+      }
+    }
+  },
+  "status": {
+    "checking": "Sistem durumu kontrol ediliyor…",
+    "ok": "Tüm sistemler çalışıyor",
+    "degraded": "Bazı servisler yanıt vermiyor",
+    "down": "Sunucuya ulaşılamıyor"
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "body": "Aradığın sayfa taşınmış ya da hiç var olmamış olabilir.",
+    "back": "Ana sayfaya dön"
+  },
+  "footer": {
+    "rights": "© {{year}} Lumio",
+    "tagline": "Web, siber güvenlik ve uyum eğitimi"
+  }
+}

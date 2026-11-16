@@ -1,0 +1,51 @@
+/*
+ * Lumio design tokens. Values come from brand/design-system/index.html;
+ * change them there first, then here.
+ */
+:root {
+  /* Brand */
+  --navy-900: #141a2e;
+  --navy-800: #1c2230;
+  --navy-700: #2a3350;
+  --navy-500: #3c4668;
+  --amber-500: #f5a623;
+  --amber-600: #e08e12;
+  --amber-100: #fce4bc;
+  --amber-50: #fef6e8;
+
+  /* Neutral */
+  --ink: #1c2230;
+  --muted: #6b7280;
+  --faint: #9aa1ac;
+  --line: #e6e8ec;
+  --line-2: #eff1f4;
+  --surface: #ffffff;
+  --bg: #f6f7f9;
+
+  /* Status */
+  --success: #16a34a;
+  --success-bg: #e9f7ee;
+  --warning: #d97706;
+  --warning-bg: #fdf2e2;
+  --danger: #dc2626;
+  --danger-bg: #fbebeb;
+  --info: #2563eb;
+  --info-bg: #e8f0fe;
+
+  /* Radius, shadow, spacing */
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --sh-1: 0 1px 2px rgba(20, 26, 46, 0.06), 0 1px 3px rgba(20, 26, 46, 0.08);
+  --sh-2: 0 4px 12px rgba(20, 26, 46, 0.08), 0 2px 4px rgba(20, 26, 46, 0.04);
+  --sh-3: 0 12px 32px rgba(20, 26, 46, 0.12);
+  --sp: 8px;
+
+  /* Type */
+  --font-display: 'Poppins', 'Inter', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --content-width: 1120px;
+}

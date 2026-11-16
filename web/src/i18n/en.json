@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "catalog": "Courses",
+    "business": "For teams",
+    "signIn": "Sign in",
+    "language": "Language"
+  },
+  "home": {
+    "pill": "Web · Cybersecurity · KVKK",
+    "title": "Learn in a safe place, and prove what you learned",
+    "lead": "Web development, cybersecurity and KVKK compliance training with animated lessons, quizzes and verifiable certificates.",
+    "browse": "Browse courses",
+    "forTeams": "Train your team",
+    "pillars": {
+      "learn": {
+        "title": "Interactive lessons",
+        "body": "Learn step by step with video, animated modules and in-browser exercises."
+      },
+      "prove": {
+        "title": "Verifiable certificates",
+        "body": "Every certificate is digitally signed and anyone can verify it by its certificate number."
+      },
+      "comply": {
+        "title": "Compliance for teams",
+        "body": "Assign training to employees, follow their progress and report on KVKK compliance."
+      }
+    }
+  },
+  "status": {
+    "checking": "Checking system status…",
+    "ok": "All systems operational",
+    "degraded": "Some services are not responding",
+    "down": "The server cannot be reached"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for may have moved or never existed.",
+    "back": "Back to home"
+  },
+  "footer": {
+    "rights": "© {{year}} Lumio",
+    "tagline": "Web, cybersecurity and compliance training"
+  }
+}
