@@ -4,11 +4,13 @@ interface LogoProps {
 }
 
 /** The Lumio lockup from the brand kit. `dark` is the reversed version for navy backgrounds. */
-export function Logo({ variant = 'light', height = 30 }: LogoProps) {
+export function Logo({ variant = 'light', height = 36 }: LogoProps) {
   const ink = variant === 'dark' ? '#FFFFFF' : '#1C2230';
   return (
     <svg
-      viewBox="0 0 470 210"
+      // Cropped to the artwork: the brand kit's 470×210 canvas is mostly margin,
+      // which made the header logo render at a third of its height.
+      viewBox="34 76 414 98"
       height={height}
       role="img"
       aria-label="Lumio"
