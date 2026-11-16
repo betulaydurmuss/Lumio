@@ -1,5 +1,5 @@
 import { rolesRequiringTwoFactor, type Role } from '@lumio/shared';
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler } from 'express';
 import { ACCESS_COOKIE } from '../http/cookies.js';
 import type { Services } from '../services.js';
 import { scopedPrisma, type ScopedPrisma } from '../tenancy.js';
@@ -28,32 +28,47 @@ declare global {
  * a session takes effect on the next request rather than when the token expires.
  * Role comes from the database, not the token, for the same reason.
  */
-export function requireAuth(services: Services): RequestHandler {
-  return async (req, _res, next) => {
-    const raw = req.cookies?.[ACCESS_COOKIE] as string | undefined;
-    const token = raw ? await services.tokens.verifyAccess(raw) : null;
-    if (!token) return next(new HttpError(401, 'unauthenticated', 'Sign in required'));
+async function resolveAuth(services: Services, req: Request): Promise<AuthContext | null> {
+  const raw = req.cookies?.[ACCESS_COOKIE] as string | undefined;
+  const token = raw ? await services.tokens.verifyAccess(raw) : null;
+  if (!token) return null;
 
-    const session = await services.prisma.session.findFirst({
-      where: {
-        id: token.sessionId,
-        userId: token.userId,
-        orgId: token.orgId,
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      select: { mfaVerified: true, user: { select: { role: true } } },
-    });
-    if (!session) return next(new HttpError(401, 'unauthenticated', 'Session has ended'));
-
-    req.auth = {
+  const session = await services.prisma.session.findFirst({
+    where: {
+      id: token.sessionId,
       userId: token.userId,
       orgId: token.orgId,
-      sessionId: token.sessionId,
-      role: session.user.role,
-      mfaVerified: session.mfaVerified,
-      db: scopedPrisma(services.prisma, token.orgId),
-    };
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    select: { mfaVerified: true, user: { select: { role: true } } },
+  });
+  if (!session) return null;
+
+  return {
+    userId: token.userId,
+    orgId: token.orgId,
+    sessionId: token.sessionId,
+    role: session.user.role,
+    mfaVerified: session.mfaVerified,
+    db: scopedPrisma(services.prisma, token.orgId),
+  };
+}
+
+export function requireAuth(services: Services): RequestHandler {
+  return async (req, _res, next) => {
+    const context = await resolveAuth(services, req);
+    if (!context) return next(new HttpError(401, 'unauthenticated', 'Sign in required'));
+    req.auth = context;
+    next();
+  };
+}
+
+/** For public pages that show a little more to a signed-in visitor. Never rejects. */
+export function optionalAuth(services: Services): RequestHandler {
+  return async (req, _res, next) => {
+    const context = await resolveAuth(services, req);
+    if (context) req.auth = context;
     next();
   };
 }
