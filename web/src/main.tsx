@@ -30,7 +30,9 @@ import { CertificatesPage } from './pages/CertificatesPage.js';
 import { CoursePage } from './pages/CoursePage.js';
 import { CheckEmailPage, VerifyEmailPage } from './pages/EmailPages.js';
 import { HomePage } from './pages/HomePage.js';
+import { InvitePage } from './pages/InvitePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
+import { PlatformPage } from './pages/PlatformPage.js';
 import { PlayerPage } from './pages/PlayerPage.js';
 import { SignInPage } from './pages/SignInPage.js';
 import { SignUpPage } from './pages/SignUpPage.js';
@@ -58,11 +60,13 @@ const router = createBrowserRouter([
       { path: 'sign-up', element: <SignUpPage /> },
       { path: 'check-email', element: <CheckEmailPage /> },
       { path: 'verify-email', element: <VerifyEmailPage /> },
+      { path: 'invite', element: <InvitePage /> },
       {
         element: <RequireAuth />,
         children: [
           { path: 'account', element: <AccountPage /> },
           { path: 'admin', element: <AdminPage /> },
+          { path: 'platform', element: <PlatformPage /> },
           { path: 'certificates', element: <CertificatesPage /> },
         ],
       },
