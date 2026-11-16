@@ -73,19 +73,38 @@ anything of the other's. Turning the scope off makes those tests fail.
 Fonts are served from the platform itself, so a visitor's browser does not contact a third-party
 font service.
 
-## The dashboard, the player and the certificate
+## The catalog, the player and the certificate
 
-The catalog, lesson player, quizzes and certificate are the next sprints of the MVP. Screenshots
-will be added here as each one lands.
+The catalog is public. Courses are filtered by category (a parent category includes its
+subcategories), level, length, price, course language, rating and certificate, and every filter
+lives in the URL, so a search can be shared or bookmarked. Search folds Turkish letters and
+accents on both sides, so `guvenlik` finds "Güvenlik" and `GÜVENLİK` finds the same courses.
+"Popular searches" only ever learns words that returned a course.
+
+![The course catalog](docs/screenshots/catalog.png)
+
+A course page shows what you will learn, the curriculum with its free preview lessons, the
+requirements, the instructor and related courses. Free courses can be joined straight away; paid
+ones can be saved to a wishlist until payments arrive in Phase 2. Enrolments and wishlists belong
+to the learner's organization and go through the same tenant scope as everything else.
+
+![A course page](docs/screenshots/course.png)
+
+The twelve courses, four instructors, ratings and learner counts loaded by `npm run db:seed` are
+demo content. The people are fictional, and the KVKK courses say plainly that they are awareness
+training rather than legal advice.
+
+The lesson player, quizzes and the signed certificate are the next sprints of the MVP.
 
 ## Repository layout
 
 ```
-api/        Express + zod REST API, Prisma schema and migrations
+api/        Express + zod REST API, Prisma schema, migrations and the demo catalog seed
 worker/     BullMQ jobs: mail today; video processing and reports later
 web/        React + Vite client, design tokens, Turkish and English translations
 shared/     zod schemas and types used by both the API and the client
 brand/      Logo kit and the living design system (open brand/design-system/index.html)
+docs/       Screenshots used in this README
 ```
 
 ## Requirements
@@ -123,6 +142,7 @@ cp .env.example .env
 docker compose up -d postgres redis mailpit
 npm install
 npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
