@@ -36,11 +36,13 @@ model Organization {
   name      String
   kind      OrganizationKind @default(company)
   createdAt DateTime         @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
 
-  users     User[]
-  sessions  Session[]
-  auditLogs AuditLog[]
+  users       User[]
+  sessions    Session[]
+  auditLogs   AuditLog[]
+  enrollments Enrollment[]
+  wishlist    WishlistItem[]
 
   @@map("organizations")
 }
@@ -66,6 +68,9 @@ model User {
   sessions           Session[]
   auditLogs          AuditLog[]
   verificationTokens EmailVerification[]
+  enrollments        Enrollment[]
+  wishlist           WishlistItem[]
+  instructorProfile  Instructor?
 
   /// Stored lower-cased. One address is one account, so sign-in needs no organization picker.
   @@unique([email])
@@ -128,4 +133,185 @@ model AuditLog {
   @@index([orgId, createdAt])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+// ---- Catalog ----------------------------------------------------------------
+// The public catalog belongs to the platform, not to a tenant: every visitor sees
+// the same published courses. What a user does with a course (enrolling, saving
+// it) belongs to their organization and is tenant-scoped.
+
+enum CourseLevel {
+  beginner
+  intermediate
+  advanced
+  all
+}
+
+enum CourseStatus {
+  draft
+  published
+}
+
+enum LessonType {
+  video
+  interactive
+  reading
+}
+
+model Category {
+  id       String  @id @default(uuid()) @db.Uuid
+  slug     String  @unique
+  parentId String? @map("parent_id") @db.Uuid
+  nameTr   String  @map("name_tr")
+  nameEn   String  @map("name_en")
+  position Int     @default(0)
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryTree")
+  courses  Course[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Instructor {
+  id         String  @id @default(uuid()) @db.Uuid
+  userId     String? @unique @map("user_id") @db.Uuid
+  slug       String  @unique
+  name       String
+  headlineTr String  @map("headline_tr")
+  headlineEn String  @map("headline_en")
+  bioTr      String  @map("bio_tr")
+  bioEn      String  @map("bio_en")
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  courses Course[]
+
+  @@map("instructors")
+}
+
+model Course {
+  id              String       @id @default(uuid()) @db.Uuid
+  slug            String       @unique
+  categoryId      String       @map("category_id") @db.Uuid
+  instructorId    String       @map("instructor_id") @db.Uuid
+  status          CourseStatus @default(draft)
+  titleTr         String       @map("title_tr")
+  titleEn         String       @map("title_en")
+  subtitleTr      String       @map("subtitle_tr")
+  subtitleEn      String       @map("subtitle_en")
+  descriptionTr   String       @map("description_tr")
+  descriptionEn   String       @map("description_en")
+  outcomesTr      String[]     @map("outcomes_tr")
+  outcomesEn      String[]     @map("outcomes_en")
+  requirementsTr  String[]     @map("requirements_tr")
+  requirementsEn  String[]     @map("requirements_en")
+  audienceTr      String[]     @map("audience_tr")
+  audienceEn      String[]     @map("audience_en")
+  level           CourseLevel
+  /// The language the course is taught in, independent of the interface language.
+  language        Locale
+  /// Minor units (kuruş). Zero means free.
+  priceAmount     Int          @default(0) @map("price_amount")
+  /// The list price before a discount, if one is shown.
+  listPriceAmount Int?         @map("list_price_amount")
+  currency        String       @default("TRY")
+  hasCertificate  Boolean      @default(true) @map("has_certificate")
+  coverStyle      String       @default("a") @map("cover_style")
+  /// Titles, subtitles and instructor in both languages, folded by normalizeSearch().
+  searchText      String       @default("") @map("search_text")
+  /// Denormalised for sorting and the course card; recomputed when content changes.
+  durationMinutes Int          @default(0) @map("duration_minutes")
+  lessonCount     Int          @default(0) @map("lesson_count")
+  ratingAverage   Decimal      @default(0) @map("rating_average") @db.Decimal(2, 1)
+  ratingCount     Int          @default(0) @map("rating_count")
+  enrollmentCount Int          @default(0) @map("enrollment_count")
+  completionCount Int          @default(0) @map("completion_count")
+  publishedAt     DateTime?    @map("published_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  instructor   Instructor     @relation(fields: [instructorId], references: [id], onDelete: Restrict)
+  sections     Section[]
+  enrollments  Enrollment[]
+  wishlistedBy WishlistItem[]
+
+  @@index([status, categoryId])
+  @@index([status, enrollmentCount])
+  @@index([status, publishedAt])
+  @@map("courses")
+}
+
+model Section {
+  id       String @id @default(uuid()) @db.Uuid
+  courseId String @map("course_id") @db.Uuid
+  position Int
+  titleTr  String @map("title_tr")
+  titleEn  String @map("title_en")
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@unique([courseId, position])
+  @@map("sections")
+}
+
+model Lesson {
+  id              String     @id @default(uuid()) @db.Uuid
+  sectionId       String     @map("section_id") @db.Uuid
+  position        Int
+  type            LessonType
+  titleTr         String     @map("title_tr")
+  titleEn         String     @map("title_en")
+  durationMinutes Int        @map("duration_minutes")
+  /// Free preview lessons can be opened from the course page without enrolling.
+  isPreview       Boolean    @default(false) @map("is_preview")
+
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, position])
+  @@map("lessons")
+}
+
+model Enrollment {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, courseId])
+  @@index([orgId])
+  @@map("enrollments")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([orgId])
+  @@map("wishlist_items")
+}
+
+/// Counts searches so the catalog can suggest what others look for. Holds no user data.
+model SearchTerm {
+  term      String   @id
+  count     Int      @default(1)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([count])
+  @@map("search_terms")
 }
