@@ -3,6 +3,7 @@ import { createPrisma, type PrismaClient } from '../src/db.js';
 import { Prisma } from '../src/generated/prisma/client.js';
 import { categories, courses, instructors, type CategorySeed } from './seed/catalog-data.js';
 import { lessonContent } from './seed/lesson-content.js';
+import { quizContent, type QuizSeed } from './seed/quiz-content.js';
 
 // Every video lesson plays the same short demo clip until real lessons are recorded.
 const DEMO_VIDEO = {
@@ -141,9 +142,55 @@ export async function seedCatalog(prisma: PrismaClient) {
         });
       }
     }
+
+    for (const quiz of quizContent[seed.slug] ?? []) await upsertQuiz(prisma, course.id, quiz);
   }
 
   return { categories: categoryIds.size, instructors: instructorIds.size, courses: courses.length };
+}
+
+async function upsertQuiz(prisma: PrismaClient, courseId: string, seed: QuizSeed) {
+  for (const question of seed.questions) {
+    const count = question.tr.options.length;
+    if (question.en.options.length !== count || question.answer >= count) {
+      throw new Error(`Quiz "${seed.title[1]}" has a question with mismatched options`);
+    }
+  }
+
+  const sectionId =
+    seed.section === 'final'
+      ? null
+      : (
+          await prisma.section.findUniqueOrThrow({
+            where: { courseId_position: { courseId, position: seed.section } },
+          })
+        ).id;
+  const data = {
+    titleTr: seed.title[0],
+    titleEn: seed.title[1],
+    passPercent: seed.passPercent ?? 70,
+  };
+  const existing = await prisma.quiz.findFirst({ where: { courseId, sectionId } });
+  const quiz = existing
+    ? await prisma.quiz.update({ where: { id: existing.id }, data })
+    : await prisma.quiz.create({ data: { courseId, sectionId, ...data } });
+
+  for (const [position, question] of seed.questions.entries()) {
+    const fields = {
+      promptTr: question.tr.prompt,
+      promptEn: question.en.prompt,
+      optionsTr: question.tr.options,
+      optionsEn: question.en.options,
+      correctIndex: question.answer,
+      explanationTr: question.tr.explanation,
+      explanationEn: question.en.explanation,
+    };
+    await prisma.quizQuestion.upsert({
+      where: { quizId_position: { quizId: quiz.id, position } },
+      create: { quizId: quiz.id, position, ...fields },
+      update: fields,
+    });
+  }
 }
 
 const isEntryPoint = process.argv[1]?.replace(/\\/g, '/').endsWith('prisma/seed.ts');
