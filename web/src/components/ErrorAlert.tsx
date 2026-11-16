@@ -19,6 +19,7 @@ const KNOWN = new Set([
   'not_found',
   'not_enrolled',
   'not_watched',
+  'quiz_locked',
 ]);
 
 export function errorKey(error: unknown): string {

@@ -2,6 +2,8 @@ import {
   courseOutlineSchema,
   lessonViewSchema,
   progressResultSchema,
+  quizResultSchema,
+  quizViewSchema,
   type ProgressUpdate,
 } from '@lumio/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -54,5 +56,39 @@ export function useSaveProgress(slug: string, lessonId: string) {
         ]);
       }
     },
+  });
+}
+
+export function useQuiz(slug: string, quizId: string | undefined) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: ['quiz', slug, quizId, locale],
+    queryFn: () =>
+      api(
+        'GET',
+        `/api/learn/${encodeURIComponent(slug)}/quizzes/${encodeURIComponent(quizId ?? '')}?locale=${locale}`,
+        { schema: quizViewSchema },
+      ),
+    enabled: Boolean(quizId),
+    retry: false,
+  });
+}
+
+export function useSubmitQuiz(slug: string, quizId: string) {
+  const locale = useLocale();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (answers: number[]) =>
+      api(
+        'POST',
+        `/api/learn/${encodeURIComponent(slug)}/quizzes/${encodeURIComponent(quizId)}/attempts?locale=${locale}`,
+        { body: { answers }, schema: quizResultSchema },
+      ),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['outline', slug] }),
+        queryClient.invalidateQueries({ queryKey: ['quiz', slug, quizId] }),
+        queryClient.invalidateQueries({ queryKey: ['learning'] }),
+      ]),
   });
 }

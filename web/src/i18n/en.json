@@ -67,7 +67,8 @@
     "payment_required": "This course is paid. Online payment opens soon; until then you can enrol in the free courses.",
     "not_found": "What you are looking for could not be found.",
     "not_enrolled": "This lesson is open to learners enrolled in the course.",
-    "not_watched": "Watch most of the video to complete the lesson."
+    "not_watched": "Watch most of the video to complete the lesson.",
+    "quiz_locked": "The final exam opens once you have finished every lesson."
   },
   "signIn": {
     "title": "Sign in",
@@ -304,7 +305,32 @@
     "continue": "Continue",
     "finish": "Finish the lesson",
     "allDoneTitle": "Well done, you have completed every lesson in this course!",
-    "allDoneBody": "The final quiz and your verifiable certificate will be here soon.",
+    "allDoneBody": "You can now take the quizzes; once you pass them all, the course is complete.",
     "lessonNotFound": "This lesson could not be found."
+  },
+  "quiz": {
+    "sectionQuiz": "Section quiz",
+    "finalExam": "Final exam",
+    "questions_one": "{{count}} question",
+    "questions_other": "{{count}} questions",
+    "passMark": "Pass mark: {{percent}}%",
+    "best": "Your best score: {{score}}%",
+    "passedBadge": "Passed",
+    "lockedTitle": "This exam is still locked",
+    "lockedBody": "The final exam opens once you have completed every lesson in the course.",
+    "question": "Question {{current}} of {{total}}",
+    "answered": "{{answered}} of {{total}} answered",
+    "submit": "Submit answers",
+    "retry": "Try again",
+    "score": "Your score: {{score}}%",
+    "passedTitle": "Well done, you passed!",
+    "failedTitle": "Not this time.",
+    "failedBody": "You need at least {{percent}}% to pass. Review the lessons and try again.",
+    "finalHidden": "On the final exam the correct answers are shown once you pass. The questions you got wrong are marked.",
+    "yourAnswer": "Your answer",
+    "correctAnswer": "Correct answer",
+    "previousAttempts": "Previous attempts",
+    "courseDoneTitle": "You have completed the course!",
+    "courseDoneBody": "You finished every lesson and passed every quiz. Your verifiable certificate will be here in the next step."
   }
 }

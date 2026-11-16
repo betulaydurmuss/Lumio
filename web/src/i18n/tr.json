@@ -67,7 +67,8 @@
     "payment_required": "Bu kurs ücretli. Online ödeme yakında açılacak; o zamana kadar ücretsiz kurslara kaydolabilirsin.",
     "not_found": "Aradığın içerik bulunamadı.",
     "not_enrolled": "Bu ders, kursa kayıtlı öğrencilere açık.",
-    "not_watched": "Dersi tamamlamak için videonun büyük bölümünü izlemelisin."
+    "not_watched": "Dersi tamamlamak için videonun büyük bölümünü izlemelisin.",
+    "quiz_locked": "Kurs sonu sınavı, bütün dersleri bitirdiğinde açılır."
   },
   "signIn": {
     "title": "Giriş yap",
@@ -304,7 +305,32 @@
     "continue": "Devam",
     "finish": "Dersi bitir",
     "allDoneTitle": "Tebrikler, kursun bütün derslerini tamamladın!",
-    "allDoneBody": "Kurs sonu sınavı ve doğrulanabilir sertifika yakında burada olacak.",
+    "allDoneBody": "Şimdi sınavlara geçebilirsin; hepsini geçtiğinde kurs tamamlanır.",
     "lessonNotFound": "Bu ders bulunamadı."
+  },
+  "quiz": {
+    "sectionQuiz": "Bölüm sınavı",
+    "finalExam": "Kurs sonu sınavı",
+    "questions_one": "{{count}} soru",
+    "questions_other": "{{count}} soru",
+    "passMark": "Geçme notu: %{{percent}}",
+    "best": "En iyi puanın: %{{score}}",
+    "passedBadge": "Geçti",
+    "lockedTitle": "Bu sınav henüz kilitli",
+    "lockedBody": "Kurs sonu sınavı, kursun bütün derslerini tamamladığında açılır.",
+    "question": "Soru {{current}} / {{total}}",
+    "answered": "{{answered}} / {{total}} soru cevaplandı",
+    "submit": "Cevapları gönder",
+    "retry": "Tekrar dene",
+    "score": "Puanın: %{{score}}",
+    "passedTitle": "Tebrikler, sınavı geçtin!",
+    "failedTitle": "Bu sefer olmadı.",
+    "failedBody": "Geçmek için en az %{{percent}} gerekiyor. Dersleri gözden geçirip tekrar deneyebilirsin.",
+    "finalHidden": "Kurs sonu sınavında doğru cevaplar sınavı geçtikten sonra gösterilir. Yanlış cevapladığın soruları işaretledik.",
+    "yourAnswer": "Senin cevabın",
+    "correctAnswer": "Doğru cevap",
+    "previousAttempts": "Önceki denemeler",
+    "courseDoneTitle": "Kursu tamamladın!",
+    "courseDoneBody": "Bütün dersleri bitirdin ve bütün sınavları geçtin. Doğrulanabilir sertifikan bir sonraki adımda burada olacak."
   }
 }
