@@ -24,17 +24,17 @@ taken on trust.
 These are the properties the code is built to enforce. The table says honestly which ones are in
 place today and which are still being built.
 
-| Guarantee                                                                               | Status             |
-| --------------------------------------------------------------------------------------- | ------------------ |
-| Configuration is validated at boot; a missing or weak secret stops the process          | In place           |
-| Every API response carries strict security headers, `no-store` and a request id         | In place           |
-| The API answers only the web origin, is rate limited, and checks a CSRF token on writes | In place           |
-| One organization cannot read, change or delete another's rows                           | In place, tested   |
-| Passwords are hashed with argon2id; five wrong attempts lock the account for 15 minutes | In place, tested   |
-| Admins cannot reach the admin area without TOTP two-factor authentication               | In place, tested   |
-| Revoking a session, or replaying a rotated refresh token, ends that session at once     | In place, tested   |
-| Every critical action is written to an audit log the database refuses to edit or delete | In place, tested   |
-| Certificates are signed and verifiable at `/dogrula/:certificateNo`                     | Certificate sprint |
+| Guarantee                                                                               | Status           |
+| --------------------------------------------------------------------------------------- | ---------------- |
+| Configuration is validated at boot; a missing or weak secret stops the process          | In place         |
+| Every API response carries strict security headers, `no-store` and a request id         | In place         |
+| The API answers only the web origin, is rate limited, and checks a CSRF token on writes | In place         |
+| One organization cannot read, change or delete another's rows                           | In place, tested |
+| Passwords are hashed with argon2id; five wrong attempts lock the account for 15 minutes | In place, tested |
+| Admins cannot reach the admin area without TOTP two-factor authentication               | In place, tested |
+| Revoking a session, or replaying a rotated refresh token, ends that session at once     | In place, tested |
+| Every critical action is written to an audit log the database refuses to edit or delete | In place, tested |
+| Certificates are signed with Ed25519 and verifiable at `/dogrula/:certificateNo`        | In place, tested |
 
 ### How isolation is enforced
 
@@ -127,12 +127,53 @@ A course is complete when every lesson is done and every quiz is passed. The enr
 that moment once, even if two requests finish the course at the same time, and the completion is
 written to the audit log. Progress bars count lessons and quizzes alike.
 
-The signed, verifiable certificate is the next sprint of the MVP.
+A final exam is rationed: three attempts in any 24 hours until it is passed, and a failed attempt
+returns the score only, not which questions were right. Without both, the exam could be passed by
+trying each option of each question in turn, which is exactly what an early version of the
+end-to-end check managed to do.
+
+### The certificate
+
+![A Lumio certificate](docs/screenshots/certificate.png)
+
+Completing a course that offers a certificate issues one straight away. Its number,
+`LMS-2026-000042`, comes from a database sequence, so two certificates issued at the same moment
+can never share it. Everything printed on it, the holder, organization, course in both languages,
+instructor, hours and dates, is copied onto the certificate when it is issued and signed together
+with Ed25519. Renaming the course later does not change a certificate that already exists.
+
+The signing key is created on first use and its private half is stored encrypted with
+`ENCRYPTION_KEY`. The public keys are published at `/api/certificates/keys`, so a certificate can be
+checked without asking Lumio at all; [api/test/certificate.test.ts](api/test/certificate.test.ts)
+does exactly that with nothing but Node's `crypto`.
+
+`/dogrula/:certificateNo` is public and says one of three things:
+
+| Status  | Meaning                                                                                                      |
+| ------- | ------------------------------------------------------------------------------------------------------------ |
+| Valid   | The signature matches the record                                                                             |
+| Revoked | The signature matches, and the organization withdrew the certificate                                         |
+| Invalid | The record no longer matches its signature: something was changed. It is never drawn or offered for download |
+
+![The verification page](docs/screenshots/verify.png)
+
+Certificate numbers run in sequence, so anyone could step through them. To keep that from becoming
+a list of names, the page shows the holder as `B****** D*****` unless the request carries the
+random code printed in the certificate's QR link, and the PDF and PNG need that code too. The page
+is rate limited for the same reason.
+
+The certificate is drawn from a single SVG template: guilloche background, double gold frame,
+corner marks, the Lumio logo, the holder in amber, the instructor's signature line, a gold seal,
+the certificate number and the QR code. The API renders it to PNG with resvg and wraps the
+print-size image in an A4 PDF with pdf-lib. The brief suggested Puppeteer; it was left out because
+the API image is distroless and has no browser to drive. Learners can add the certificate to
+LinkedIn from their certificates page, and an organization admin with 2FA can revoke a certificate
+from their own organization with a reason, which is written to the audit log.
 
 ## Repository layout
 
 ```
-api/        Express + zod REST API, Prisma schema, migrations, demo catalog and demo media
+api/        Express + zod REST API, Prisma schema, migrations, demo content, certificate fonts
 worker/     BullMQ jobs: mail today; video processing and reports later
 web/        React + Vite client, design tokens, Turkish and English translations
 shared/     zod schemas and types used by both the API and the client
