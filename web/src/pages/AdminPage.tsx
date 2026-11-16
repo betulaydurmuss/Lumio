@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { authApi } from '../api/auth.js';
+import { useOrgCertificates, useRevokeCertificate } from '../api/certificates.js';
 import { ApiError } from '../api/client.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 
@@ -111,8 +113,123 @@ export function AdminPage() {
               </div>
             )}
           </article>
+
+          <CertificatesCard />
         </div>
       )}
     </div>
+  );
+}
+
+/** The organization's certificates, with a two-step revoke that asks for a reason. */
+function CertificatesCard() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? 'tr';
+  const certificates = useOrgCertificates();
+  const revoke = useRevokeCertificate();
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
+
+  function confirm(event: FormEvent, certNo: string) {
+    event.preventDefault();
+    revoke.mutate(
+      { certNo, reason },
+      {
+        onSuccess: () => {
+          setRevoking(null);
+          setReason('');
+        },
+      },
+    );
+  }
+
+  return (
+    <article className="card">
+      <h3>{t('adminCerts.title')}</h3>
+      <p className="hint">{t('adminCerts.lead')}</p>
+      {certificates.isPending && <div className="skeleton" style={{ height: 96 }} />}
+      {certificates.isError && <ErrorAlert error={certificates.error} />}
+      {revoke.error && <ErrorAlert error={revoke.error} />}
+      {certificates.data?.length === 0 && <p className="empty">{t('adminCerts.empty')}</p>}
+      {certificates.data && certificates.data.length > 0 && (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('adminCerts.certNo')}</th>
+                <th>{t('adminCerts.recipient')}</th>
+                <th>{t('adminCerts.course')}</th>
+                <th>{t('adminCerts.issued')}</th>
+                <th>{t('adminCerts.status')}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {certificates.data.map((row) => (
+                <tr key={row.certNo}>
+                  <td className="mono">
+                    <Link to={`/dogrula/${row.certNo}`}>{row.certNo}</Link>
+                  </td>
+                  <td>{row.recipientName}</td>
+                  <td>{row.courseTitle}</td>
+                  <td className="mono">{formatDate(row.issuedAt, locale)}</td>
+                  <td>
+                    <span className={`badge ${row.revokedAt ? 'badge-soft' : 'badge-free'}`}>
+                      {row.revokedAt ? t('adminCerts.revoked') : t('adminCerts.valid')}
+                    </span>
+                  </td>
+                  <td>
+                    {!row.revokedAt && revoking !== row.certNo && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setRevoking(row.certNo)}
+                      >
+                        {t('adminCerts.revoke')}
+                      </button>
+                    )}
+                    {revoking === row.certNo && (
+                      <form
+                        className="revoke-form"
+                        onSubmit={(event) => confirm(event, row.certNo)}
+                      >
+                        <label className="visually-hidden" htmlFor={`reason-${row.certNo}`}>
+                          {t('adminCerts.reason')}
+                        </label>
+                        <input
+                          id={`reason-${row.certNo}`}
+                          className="input"
+                          placeholder={t('adminCerts.reasonPlaceholder')}
+                          minLength={3}
+                          maxLength={300}
+                          required
+                          autoFocus
+                          value={reason}
+                          onChange={(event) => setReason(event.target.value)}
+                        />
+                        <button
+                          type="submit"
+                          className="btn btn-danger btn-sm"
+                          disabled={reason.trim().length < 3 || revoke.isPending}
+                        >
+                          {t('adminCerts.confirm')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setRevoking(null)}
+                        >
+                          {t('adminCerts.cancel')}
+                        </button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </article>
   );
 }
