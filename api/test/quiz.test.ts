@@ -133,18 +133,50 @@ describe('the final exam', () => {
     expect(res.body.error.code).toBe('quiz_locked');
   });
 
-  it('does not reveal the answers when it is failed', async () => {
-    const { client } = await enrolled();
+  it('reveals only the score when it is failed, not even which questions were right', async () => {
+    const client = await enrolledLearnerWithLessons();
     const { final } = await quizzes();
-    await finishLessons(client);
 
-    const failed = (await attempt(client, final.id, wrongAnswers(final))).body as QuizResult;
-    expect(failed.passed).toBe(false);
-    expect(failed.results.every((result) => result.correctIndex === null)).toBe(true);
-    expect(failed.results.every((result) => result.explanation === null)).toBe(true);
-    expect(failed.results.every((result) => result.correct === false)).toBe(true);
+    const wrong = (await attempt(client, final.id, wrongAnswers(final))).body as QuizResult;
+    expect(wrong.passed).toBe(false);
+    expect(wrong.score).toBe(0);
+    for (const result of wrong.results) {
+      expect(result).toMatchObject({ correct: null, correctIndex: null, explanation: null });
+    }
+  });
+
+  it('allows three attempts a day until it is passed', async () => {
+    const client = await enrolledLearnerWithLessons();
+    const { final } = await quizzes();
+
+    for (let left = 3; left > 0; left--) {
+      const view = (await client.get(`/api/learn/${COURSE}/quizzes/${final.id}`)).body as QuizView;
+      expect(view.attemptsLeft).toBe(left);
+      expect((await attempt(client, final.id, wrongAnswers(final))).status).toBe(201);
+    }
+
+    const blocked = await attempt(client, final.id, rightAnswers(final));
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error.code).toBe('attempt_limit');
+  });
+
+  it('places no limit on section quizzes', async () => {
+    const { client } = await enrolled();
+    const { section } = await quizzes();
+
+    for (let i = 0; i < 5; i++) {
+      expect((await attempt(client, section.id, wrongAnswers(section))).status).toBe(201);
+    }
+    const view = (await client.get(`/api/learn/${COURSE}/quizzes/${section.id}`)).body as QuizView;
+    expect(view.attemptsLeft).toBeNull();
   });
 });
+
+async function enrolledLearnerWithLessons() {
+  const { client } = await enrolled();
+  await finishLessons(client);
+  return client;
+}
 
 describe('completing a course', () => {
   it('happens once, after every lesson and every quiz', async () => {

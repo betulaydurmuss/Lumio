@@ -5,6 +5,7 @@ import { generate } from 'otplib';
 import request from 'supertest';
 import { expect } from 'vitest';
 import { createApp } from '../src/app.js';
+import { CertificateKeyRing } from '../src/certificates/signing.js';
 import { createPrisma, type PrismaClient } from '../src/db.js';
 import { createLogger } from '../src/logger.js';
 import { MediaSigner } from '../src/media/signer.js';
@@ -62,6 +63,7 @@ export function buildServices(prisma: PrismaClient, mailer: FakeMailer, replay: 
     mailer,
     replay,
     encryptionKey: Buffer.alloc(32, 7),
+    certificates: new CertificateKeyRing(prisma, Buffer.alloc(32, 7)),
     webOrigin: 'http://localhost:5174',
     secureCookies: false,
     media: {
@@ -90,7 +92,7 @@ export function buildApp(options: { authRateLimit?: number } = {}): TestContext 
 export async function resetDatabase(prisma: PrismaClient) {
   // TRUNCATE skips row triggers, so the append-only audit table can be cleared between tests.
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_logs, email_verifications, sessions, quiz_attempts, lesson_progress, enrollments, wishlist_items, search_terms',
+    'TRUNCATE TABLE audit_logs, email_verifications, sessions, certificates, quiz_attempts, lesson_progress, enrollments, wishlist_items, search_terms',
   );
   // Users and organizations are deleted rather than truncated with CASCADE, which
   // would follow instructors.user_id into the catalog and wipe the seeded courses.
