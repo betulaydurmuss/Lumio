@@ -8,6 +8,7 @@ const TENANT_MODELS = new Set([
   'Enrollment',
   'WishlistItem',
   'LessonProgress',
+  'QuizAttempt',
 ]);
 
 const READ_OR_WRITE_BY_WHERE = new Set([

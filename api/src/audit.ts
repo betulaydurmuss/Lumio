@@ -11,7 +11,8 @@ export type AuditAction =
   | 'auth.refresh_reused'
   | 'session.revoked'
   | 'totp.enabled'
-  | 'course.enrolled';
+  | 'course.enrolled'
+  | 'course.completed';
 
 export interface AuditEntry {
   orgId: string | null;

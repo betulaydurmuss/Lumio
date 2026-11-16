@@ -374,7 +374,7 @@ export function learningRouter(services: Services): Router {
   router.get('/learning', requireAuth(services), async (req, res) => {
     const context = auth(req);
     const locale = localeOf(req);
-    const [enrollments, progress] = await Promise.all([
+    const [enrollments, progress, passedAttempts] = await Promise.all([
       context.db.enrollment.findMany({
         where: { userId: context.userId },
         include: {
@@ -387,6 +387,7 @@ export function learningRouter(services: Services): Router {
                   lessons: { orderBy: { position: 'asc' }, select: { id: true } },
                 },
               },
+              quizzes: { select: { id: true } },
             },
           },
         },
@@ -395,16 +396,25 @@ export function learningRouter(services: Services): Router {
         where: { userId: context.userId },
         select: { lessonId: true, completedAt: true, updatedAt: true },
       }),
+      context.db.quizAttempt.findMany({
+        where: { userId: context.userId, passed: true },
+        select: { quizId: true },
+      }),
     ]);
 
     const completed = new Set(progress.filter((row) => row.completedAt).map((row) => row.lessonId));
+    const passed = new Set(passedAttempts.map((row) => row.quizId));
     const lastTouched = new Map(progress.map((row) => [row.lessonId, row.updatedAt.getTime()]));
 
     const items = enrollments.map((enrollment) => {
       const lessonIds = enrollment.course.sections.flatMap((section) =>
         section.lessons.map((lesson) => lesson.id),
       );
-      const done = lessonIds.filter((id) => completed.has(id)).length;
+      const quizIds = enrollment.course.quizzes.map((quiz) => quiz.id);
+      // Same rule as the player: lessons and quizzes both count.
+      const done =
+        lessonIds.filter((id) => completed.has(id)).length +
+        quizIds.filter((id) => passed.has(id)).length;
       const activity = Math.max(
         enrollment.createdAt.getTime(),
         ...lessonIds.map((id) => lastTouched.get(id) ?? 0),
@@ -412,7 +422,7 @@ export function learningRouter(services: Services): Router {
       const item: LearningItem = {
         course: toCard(enrollment.course, locale),
         enrolledAt: enrollment.createdAt.toISOString(),
-        progress: courseProgress(done, lessonIds.length),
+        progress: courseProgress(done, lessonIds.length + quizIds.length),
         resumeLessonId: lessonIds.find((id) => !completed.has(id)) ?? lessonIds[0] ?? null,
       };
       return { item, activity };
