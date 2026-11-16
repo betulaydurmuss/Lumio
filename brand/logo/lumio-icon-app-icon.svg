@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>Lumio icon</title><rect width="256" height="256" rx="57.6" fill="#141A2E"/><g transform="translate(12.54 -7.3) scale(0.902)" fill="#ffffff">
+  <g transform="translate(0,26)">
+    <path d="M40 150 L128 130 L216 150 L216 190 L128 170 L40 190 Z" fill="#ffffff"/>
+    <circle cx="128" cy="92" r="34" fill="#ffffff"/>
+  </g>
+</g></svg>

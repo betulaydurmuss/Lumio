@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumio — Marka & Tasarım Sistemi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Marka renkleri */
+  --navy-900:#141A2E; --navy-800:#1C2230; --navy-700:#2A3350; --navy-500:#3C4668;
+  --amber-500:#F5A623; --amber-600:#E08E12; --amber-100:#FCE4BC; --amber-50:#FEF6E8;
+  /* Nötr */
+  --ink:#1C2230; --muted:#6B7280; --faint:#9AA1AC;
+  --line:#E6E8EC; --line-2:#EFF1F4;
+  --surface:#FFFFFF; --bg:#F6F7F9;
+  /* Durum */
+  --success:#16A34A; --success-bg:#E9F7EE;
+  --warning:#D97706; --warning-bg:#FDF2E2;
+  --danger:#DC2626; --danger-bg:#FBEBEB;
+  --info:#2563EB; --info-bg:#E8F0FE;
+  /* Token */
+  --r-sm:8px; --r:12px; --r-lg:16px; --r-xl:22px;
+  --sh-1:0 1px 2px rgba(20,26,46,.06),0 1px 3px rgba(20,26,46,.08);
+  --sh-2:0 4px 12px rgba(20,26,46,.08),0 2px 4px rgba(20,26,46,.04);
+  --sh-3:0 12px 32px rgba(20,26,46,.12);
+  --sp:8px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:Poppins,Inter,sans-serif;color:var(--navy-800);line-height:1.2;margin:0}
+h1{font-size:40px;font-weight:700;letter-spacing:-1px}
+h2{font-size:26px;font-weight:600;letter-spacing:-.5px}
+h3{font-size:18px;font-weight:600}
+h4{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+p{margin:0 0 12px}
+code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:var(--navy-800);color:#E7E9EF;padding:2px 7px;border-radius:6px}
+a{color:var(--amber-600);text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+/* layout */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:20px;height:66px}
+.nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+.nav a{color:var(--navy-700);font-weight:500;font-size:14px;padding:8px 12px;border-radius:var(--r-sm)}
+.nav a:hover{background:var(--bg)}
+.logo-h{display:flex;align-items:center;height:30px}
+.logo-h svg{height:30px;width:auto}
+
+section{padding:56px 0;border-bottom:1px solid var(--line-2)}
+.sec-head{margin-bottom:28px}
+.sec-head .k{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber-600);letter-spacing:.1em;text-transform:uppercase}
+.sec-head h2{margin-top:6px}
+.sec-head p{color:var(--muted);max-width:640px;margin-top:8px}
+
+.grid{display:grid;gap:18px}
+.card-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;box-shadow:var(--sh-1)}
+
+/* HERO */
+.hero{background:linear-gradient(180deg,#fff, #F6F7F9);padding:64px 0 48px}
+.hero .pill{display:inline-flex;align-items:center;gap:8px;background:var(--amber-50);color:var(--amber-600);border:1px solid var(--amber-100);padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600}
+.hero h1{margin:18px 0 10px}
+.hero p{font-size:18px;color:var(--muted);max-width:620px}
+
+/* COLOR */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.sw{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
+.sw .chip{height:80px}
+.sw .meta{padding:10px 12px}
+.sw .nm{font-weight:600;font-size:13px}
+.sw .hx{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+
+/* TYPE */
+.type-row{display:flex;align-items:baseline;gap:18px;padding:14px 0;border-bottom:1px dashed var(--line)}
+.type-row:last-child{border:none}
+.type-row .lbl{width:120px;color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:Inter,sans-serif;font-weight:600;font-size:14px;line-height:1;padding:12px 20px;border-radius:var(--r-sm);border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn svg{width:17px;height:17px}
+.btn-primary{background:var(--navy-800);color:#fff}
+.btn-primary:hover{background:var(--navy-700)}
+.btn-accent{background:var(--amber-500);color:var(--navy-900)}
+.btn-accent:hover{background:var(--amber-600);color:#fff}
+.btn-secondary{background:#fff;color:var(--navy-800);border-color:var(--line)}
+.btn-secondary:hover{border-color:var(--navy-500);background:var(--bg)}
+.btn-ghost{background:transparent;color:var(--navy-700)}
+.btn-ghost:hover{background:var(--bg)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{filter:brightness(.93)}
+.btn-sm{padding:8px 14px;font-size:13px}
+.btn-lg{padding:15px 26px;font-size:16px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px}
+.badge-new{background:var(--amber-50);color:var(--amber-600)}
+.badge-free{background:var(--success-bg);color:var(--success)}
+.badge-pop{background:var(--info-bg);color:var(--info)}
+.badge-soft{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.lvl{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--muted)}
+
+/* FORM */
+.field{margin-bottom:16px;max-width:380px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--navy-700)}
+.input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px;font-family:Inter,sans-serif;background:#fff;transition:.15s}
+.input:focus{outline:none;border-color:var(--amber-500);box-shadow:0 0 0 3px var(--amber-50)}
+.input::placeholder{color:var(--faint)}
+.toggle{position:relative;width:44px;height:24px;background:var(--line);border-radius:999px;transition:.2s;cursor:pointer}
+.toggle.on{background:var(--amber-500)}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;box-shadow:var(--sh-1)}
+.toggle.on::after{left:22px}
+
+/* COURSE CARD */
+.catalog{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
+.course{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-1);transition:.18s;display:flex;flex-direction:column}
+.course:hover{box-shadow:var(--sh-2);transform:translateY(-3px)}
+.course .cover{height:150px;position:relative;display:flex;align-items:center;justify-content:center;color:#fff}
+.course .cover .cat{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);color:var(--navy-800);font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px}
+.course .cover .play{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.6)}
+.cover-a{background:linear-gradient(135deg,#1C2230,#2A3350)}
+.cover-b{background:linear-gradient(135deg,#243049,#3C4668)}
+.cover-c{background:linear-gradient(135deg,#2A2038,#4A3A5E)}
+.course .body{padding:16px 16px 18px;display:flex;flex-direction:column;gap:9px;flex:1}
+.course .title{font-family:Poppins,sans-serif;font-weight:600;font-size:16px;color:var(--navy-800);line-height:1.3}
+.course .inst{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.avatar{width:22px;height:22px;border-radius:50%;background:var(--navy-700);color:#fff;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.course .meta{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted);margin-top:2px}
+.course .meta .star{color:var(--amber-500);font-weight:700}
+.course .foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between}
+.price{font-family:Poppins,sans-serif;font-weight:700;font-size:18px;color:var(--navy-800)}
+.price .old{font-size:13px;color:var(--faint);text-decoration:line-through;font-weight:500;margin-left:6px}
+.progress{height:7px;background:var(--line-2);border-radius:999px;overflow:hidden}
+.progress>i{display:block;height:100%;background:var(--amber-500);border-radius:999px}
+
+/* STAT */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.stat .n{font-family:Poppins,sans-serif;font-size:28px;font-weight:700;color:var(--navy-800)}
+.stat .l{font-size:13px;color:var(--muted);margin-top:2px}
+.stat .d{font-size:12px;font-weight:600;color:var(--success);margin-top:6px}
+
+/* ALERTS */
+.alert{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r);font-size:14px;margin-bottom:12px;border:1px solid}
+.alert .ic{flex-shrink:0;margin-top:1px}
+.alert-info{background:var(--info-bg);border-color:#CBD9F7;color:#1E3A8A}
+.alert-success{background:var(--success-bg);border-color:#BFE6CD;color:#14633A}
+.alert-warn{background:var(--warning-bg);border-color:#F6D9A8;color:#8A5410}
+.alert-danger{background:var(--danger-bg);border-color:#F3C6C6;color:#991B1B}
+
+/* TABS */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tab{padding:11px 16px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--navy-800);border-color:var(--amber-500)}
+
+.foot{padding:40px 0;color:var(--muted);font-size:13px}
+.dl-dark{background:var(--navy-900);border-radius:var(--r-lg);padding:28px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:720px){.two{grid-template-columns:1fr}.nav{display:none}}
+.clearspace{background:repeating-linear-gradient(45deg,#fff,#fff 8px,#FafBfd 8px,#FafBfd 16px);border:1px dashed var(--line);border-radius:var(--r);padding:28px;display:inline-block}
+.dont{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.dont .x{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;text-align:center;font-size:12px;color:var(--muted);width:150px}
+.dont .x .tag{color:var(--danger);font-weight:700;font-size:11px;display:block;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <div class="logo-h">
+    <svg viewBox="0 0 470 210" xmlns="http://www.w3.org/2000/svg"><g transform="translate(14,67) scale(0.54)"><path d="M48 152 L128 136 L208 152 L208 186 L128 170 L48 186 Z" fill="#1C2230"/><circle cx="128" cy="98" r="23" fill="#F5A623"/><path d="M128 62 V38" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M172 76 L190 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M84 76 L66 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/></g><text x="150" y="168" font-family="Poppins,Inter,sans-serif" font-weight="600" letter-spacing="-4" font-size="110"><tspan fill="#1C2230">lum</tspan><tspan fill="#F5A623">io</tspan></text></svg>
+  </div>
+  <nav class="nav">
+    <a href="#logo">Logo</a><a href="#renk">Renk</a><a href="#tipografi">Tipografi</a>
+    <a href="#buton">Butonlar</a><a href="#form">Form</a><a href="#kart">Kartlar</a><a href="#bilesen">Bileşenler</a>
+  </nav>
+</div></div>
+
+<div class="hero"><div class="wrap">
+  <span class="pill">● Marka &amp; Tasarım Sistemi · v1.0</span>
+  <h1>Lumio Görsel Dili</h1>
+  <p>Web geliştirme, siber güvenlik ve KVKK/uyum eğitimi veren online öğrenme platformunun kurumsal kimliği ve arayüz bileşenleri. Light tema öncelikli, sakin ve güven veren.</p>
+</div></div>
+
+<!-- LOGO -->
+<section id="logo"><div class="wrap">
+  <div class="sec-head"><div class="k">01 · Marka</div><h2>Logo</h2>
+  <p>Logo = ikon (kitaptan doğan ışık) + "lumio" wordmark. "o" harfi amber, ışık fikrini yazıya taşır. İkon tek başına app/favicon olarak kullanılır.</p></div>
+
+  <div class="two">
+    <div class="card-panel" style="text-align:center">
+      <h4 style="text-align:left;margin-bottom:14px">Açık zemin (birincil)</h4>
+      <svg viewBox="0 0 470 210" style="width:280px;height:auto"><rect width="470" height="210" fill="#F6F7F9"/><g transform="translate(14,67) scale(0.54)"><path d="M48 152 L128 136 L208 152 L208 186 L128 170 L48 186 Z" fill="#1C2230"/><circle cx="128" cy="98" r="23" fill="#F5A623"/><path d="M128 62 V38" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M172 76 L190 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M84 76 L66 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/></g><text x="150" y="168" font-family="Poppins,Inter,sans-serif" font-weight="600" letter-spacing="-4" font-size="110"><tspan fill="#1C2230">lum</tspan><tspan fill="#F5A623">io</tspan></text></svg>
+    </div>
+    <div class="card-panel dl-dark" style="text-align:center">
+      <h4 style="text-align:left;margin-bottom:14px;color:#9AA1AC">Koyu zemin (reversed)</h4>
+      <svg viewBox="0 0 470 210" style="width:280px;height:auto"><g transform="translate(14,67) scale(0.54)"><path d="M48 152 L128 136 L208 152 L208 186 L128 170 L48 186 Z" fill="#FFFFFF"/><circle cx="128" cy="98" r="23" fill="#F5A623"/><path d="M128 62 V38" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M172 76 L190 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M84 76 L66 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/></g><text x="150" y="168" font-family="Poppins,Inter,sans-serif" font-weight="600" letter-spacing="-4" font-size="110"><tspan fill="#FFFFFF">lum</tspan><tspan fill="#F5A623">io</tspan></text></svg>
+    </div>
+  </div>
+
+  <div class="two" style="margin-top:18px">
+    <div class="card-panel">
+      <h4 style="margin-bottom:14px">Yalnız ikon &amp; koruma alanı</h4>
+      <div class="clearspace">
+        <svg viewBox="0 0 256 256" style="width:92px;height:92px"><g transform="translate(0,20)"><path d="M48 152 L128 136 L208 152 L208 186 L128 170 L48 186 Z" fill="#1C2230"/><circle cx="128" cy="98" r="23" fill="#F5A623"/><path d="M128 62 V38" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M172 76 L190 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/><path d="M84 76 L66 56" stroke="#F5A623" stroke-width="17" stroke-linecap="round"/></g></svg>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">Minimum koruma alanı = ikonun ışık yüksekliğinin yarısı. Minimum boyut: wordmark 90px, ikon 20px.</p>
+    </div>
+    <div class="card-panel">
+      <h4 style="margin-bottom:14px">Yapılmaz</h4>
+      <div class="dont">
+        <div class="x">Oranı bozma<span class="tag">✗ GERME</span></div>
+        <div class="x">Renk değiştirme<span class="tag">✗ MARKA DIŞI</span></div>
+        <div class="x">Gölge/efekt ekleme<span class="tag">✗ EFEKT</span></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- RENK -->
+<section id="renk"><div class="wrap">
+  <div class="sec-head"><div class="k">02 · Renk</div><h2>Renk Paleti</h2>
+  <p>Tek vurgu: amber (ışık). Kurumsal taban: lacivert/mürekkep. Zemin açık gri, yüzeyler beyaz. Durum renkleri her zaman ikon + metinle birlikte kullanılır.</p></div>
+  <h4 style="margin-bottom:12px">Marka</h4>
+  <div class="swatches" style="margin-bottom:28px">
+    <div class="sw"><div class="chip" style="background:#F5A623"></div><div class="meta"><div class="nm">Amber / Işık</div><div class="hx">#F5A623</div></div></div>
+    <div class="sw"><div class="chip" style="background:#E08E12"></div><div class="meta"><div class="nm">Amber Hover</div><div class="hx">#E08E12</div></div></div>
+    <div class="sw"><div class="chip" style="background:#1C2230"></div><div class="meta"><div class="nm">Mürekkep</div><div class="hx">#1C2230</div></div></div>
+    <div class="sw"><div class="chip" style="background:#141A2E"></div><div class="meta"><div class="nm">Lacivert Koyu</div><div class="hx">#141A2E</div></div></div>
+    <div class="sw"><div class="chip" style="background:#2A3350"></div><div class="meta"><div class="nm">Lacivert 700</div><div class="hx">#2A3350</div></div></div>
+    <div class="sw"><div class="chip" style="background:#FEF6E8"></div><div class="meta"><div class="nm">Amber Tint</div><div class="hx">#FEF6E8</div></div></div>
+  </div>
+  <h4 style="margin-bottom:12px">Nötr &amp; Durum</h4>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#F6F7F9"></div><div class="meta"><div class="nm">Zemin</div><div class="hx">#F6F7F9</div></div></div>
+    <div class="sw"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid #eee"></div><div class="meta"><div class="nm">Yüzey</div><div class="hx">#FFFFFF</div></div></div>
+    <div class="sw"><div class="chip" style="background:#E6E8EC"></div><div class="meta"><div class="nm">Çizgi</div><div class="hx">#E6E8EC</div></div></div>
+    <div class="sw"><div class="chip" style="background:#6B7280"></div><div class="meta"><div class="nm">İkincil metin</div><div class="hx">#6B7280</div></div></div>
+    <div class="sw"><div class="chip" style="background:#16A34A"></div><div class="meta"><div class="nm">Başarı</div><div class="hx">#16A34A</div></div></div>
+    <div class="sw"><div class="chip" style="background:#D97706"></div><div class="meta"><div class="nm">Uyarı</div><div class="hx">#D97706</div></div></div>
+    <div class="sw"><div class="chip" style="background:#DC2626"></div><div class="meta"><div class="nm">Hata</div><div class="hx">#DC2626</div></div></div>
+    <div class="sw"><div class="chip" style="background:#2563EB"></div><div class="meta"><div class="nm">Bilgi</div><div class="hx">#2563EB</div></div></div>
+  </div>
+</div></section>
+
+<!-- TIPOGRAFI -->
+<section id="tipografi"><div class="wrap">
+  <div class="sec-head"><div class="k">03 · Tipografi</div><h2>Tipografi</h2>
+  <p><strong>Poppins</strong> başlık ve marka için · <strong>Inter</strong> gövde metni için · <strong>JetBrains Mono</strong> kod, sayı ve süre için. Hepsi ücretsiz (SIL OFL) lisanslı.</p></div>
+  <div class="card-panel">
+    <div class="type-row"><div class="lbl">H1 / Poppins 700</div><div style="font-family:Poppins;font-weight:700;font-size:40px;letter-spacing:-1px">Öğrenmeye başla</div></div>
+    <div class="type-row"><div class="lbl">H2 / Poppins 600</div><div style="font-family:Poppins;font-weight:600;font-size:26px">Kurs kataloğu</div></div>
+    <div class="type-row"><div class="lbl">H3 / Poppins 600</div><div style="font-family:Poppins;font-weight:600;font-size:18px">Bölüm başlığı</div></div>
+    <div class="type-row"><div class="lbl">Gövde / Inter 400</div><div style="font-size:15px">Çalışanlarınızı güvenli bir ortamda eğitin; ilerlemeyi ve uyumu ölçün.</div></div>
+    <div class="type-row"><div class="lbl">Küçük / Inter 500</div><div style="font-size:13px;font-weight:500;color:var(--muted)">12 saat · 48 ders · Orta seviye</div></div>
+    <div class="type-row"><div class="lbl">Mono</div><div style="font-family:'JetBrains Mono';font-size:14px">LMS-2026-000042 · 12:30 · %87</div></div>
+  </div>
+</div></section>
+
+<!-- BUTONLAR -->
+<section id="buton"><div class="wrap">
+  <div class="sec-head"><div class="k">04 · Bileşen</div><h2>Butonlar</h2>
+  <p>Birincil eylem = lacivert. Dikkat çeken/CTA (kayıt ol, satın al) = amber. İkincil = çerçeveli. Metin = ghost. Tehlikeli = kırmızı.</p></div>
+  <div class="card-panel">
+    <h4 style="margin-bottom:12px">Türler</h4>
+    <div class="btn-row">
+      <button class="btn btn-primary">Birincil</button>
+      <button class="btn btn-accent">Hemen Kaydol</button>
+      <button class="btn btn-secondary">İkincil</button>
+      <button class="btn btn-ghost">Metin</button>
+      <button class="btn btn-danger">Sil</button>
+    </div>
+    <h4 style="margin:18px 0 12px">Boyut &amp; ikon &amp; durum</h4>
+    <div class="btn-row">
+      <button class="btn btn-accent btn-sm">Küçük</button>
+      <button class="btn btn-accent">Orta</button>
+      <button class="btn btn-accent btn-lg">Büyük</button>
+      <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Derse Başla</button>
+      <button class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>İndir</button>
+      <button class="btn btn-primary" disabled>Pasif</button>
+    </div>
+  </div>
+</div></section>
+
+<!-- FORM -->
+<section id="form"><div class="wrap">
+  <div class="sec-head"><div class="k">05 · Bileşen</div><h2>Form Elemanları</h2>
+  <p>Odakta amber çerçeve + yumuşak amber halka. Tüm etiketler net, hata durumları ikon + metinle.</p></div>
+  <div class="two">
+    <div class="card-panel">
+      <div class="field"><label>E-posta</label><input class="input" placeholder="ad@sirket.com"></div>
+      <div class="field"><label>Kategori</label>
+        <select class="input"><option>Web Geliştirme</option><option>Siber Güvenlik</option><option>KVKK &amp; Uyum</option></select></div>
+      <div class="field" style="display:flex;align-items:center;gap:12px"><div class="toggle on" onclick="this.classList.toggle('on')"></div><span style="font-size:14px">E-posta bildirimleri</span></div>
+    </div>
+    <div class="card-panel">
+      <h4 style="margin-bottom:12px">Rozetler &amp; durumlar</h4>
+      <div class="btn-row">
+        <span class="badge badge-new">Yeni</span>
+        <span class="badge badge-free">Ücretsiz</span>
+        <span class="badge badge-pop">Popüler</span>
+        <span class="badge badge-soft">Sertifikalı</span>
+      </div>
+      <div class="btn-row" style="margin-top:4px">
+        <span class="lvl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6B7280" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg>Başlangıç</span>
+        <span class="lvl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6B7280" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg>Orta</span>
+        <span class="lvl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6B7280" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg>İleri</span>
+      </div>
+      <h4 style="margin:16px 0 10px">İlerleme</h4>
+      <div class="progress"><i style="width:68%"></i></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">%68 tamamlandı · 33/48 ders</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- KARTLAR -->
+<section id="kart"><div class="wrap">
+  <div class="sec-head"><div class="k">06 · Bileşen</div><h2>Kurs Kartları</h2>
+  <p>Platformun kalbi. Kapak + kategori + başlık + eğitmen + süre/seviye/puan + fiyat veya ilerleme. Hover'da hafif yükselir.</p></div>
+  <div class="catalog">
+    <div class="course">
+      <div class="cover cover-a"><span class="cat">Web Geliştirme</span><div class="play"><svg viewBox="0 0 24 24" width="18" fill="#fff"><polygon points="6 4 20 12 6 20"/></svg></div></div>
+      <div class="body">
+        <div class="title">HTML5 &amp; CSS ile Modern Web</div>
+        <div class="inst"><span class="avatar">AY</span>Ayşe Yılmaz</div>
+        <div class="meta"><span>⏱ 14 sa</span><span class="lvl">Başlangıç</span><span class="star">★ 4.8</span></div>
+        <div class="foot"><div class="price">₺249<span class="old">₺499</span></div><button class="btn btn-accent btn-sm">Kaydol</button></div>
+      </div>
+    </div>
+    <div class="course">
+      <div class="cover cover-b"><span class="cat">Siber Güvenlik</span><div class="play"><svg viewBox="0 0 24 24" width="18" fill="#fff"><polygon points="6 4 20 12 6 20"/></svg></div></div>
+      <div class="body">
+        <div class="title">Oltalama &amp; Sosyal Mühendislik</div>
+        <div class="inst"><span class="avatar">MK</span>Mert Kaya</div>
+        <div class="meta"><span>⏱ 9 sa</span><span class="lvl">Orta</span><span class="star">★ 4.9</span></div>
+        <div class="foot"><div class="price">₺349</div><button class="btn btn-accent btn-sm">Kaydol</button></div>
+      </div>
+    </div>
+    <div class="course">
+      <div class="cover cover-c"><span class="cat">KVKK &amp; Uyum</span><span class="badge badge-free" style="position:absolute;top:12px;right:12px">Ücretsiz</span></div>
+      <div class="body">
+        <div class="title">KVKK Farkındalık Eğitimi</div>
+        <div class="inst"><span class="avatar">SD</span>Selin Demir</div>
+        <div class="meta"><span>⏱ 4 sa</span><span class="lvl">Herkes</span><span class="star">★ 4.7</span></div>
+        <div style="margin-top:4px"><div class="progress"><i style="width:40%"></i></div><p style="font-size:12px;color:var(--muted);margin:6px 0 0">Devam ediyor · %40</p></div>
+        <div class="foot"><span class="badge badge-soft">Sertifikalı</span><button class="btn btn-primary btn-sm">Devam Et</button></div>
+      </div>
+    </div>
+  </div>
+  <h4 style="margin:28px 0 12px">İstatistik kartları (yönetici paneli)</h4>
+  <div class="stats">
+    <div class="stat"><div class="n">1.284</div><div class="l">Aktif öğrenci</div><div class="d">▲ %12 bu ay</div></div>
+    <div class="stat"><div class="n">%87</div><div class="l">Tamamlama oranı</div><div class="d">▲ %4</div></div>
+    <div class="stat"><div class="n">342</div><div class="l">Sertifika verildi</div><div class="d">▲ %9</div></div>
+    <div class="stat"><div class="n">96</div><div class="l">Yayındaki kurs</div><div class="d" style="color:var(--muted)">— sabit</div></div>
+  </div>
+</div></section>
+
+<!-- BILESENLER -->
+<section id="bilesen"><div class="wrap">
+  <div class="sec-head"><div class="k">07 · Bileşen</div><h2>Diğer Bileşenler</h2>
+  <p>Sekmeler, uyarılar ve geri bildirim öğeleri — hepsi aynı token ve renk diliyle.</p></div>
+  <div class="two">
+    <div class="card-panel">
+      <h4 style="margin-bottom:14px">Sekmeler</h4>
+      <div class="tabs"><div class="tab active">Genel Bakış</div><div class="tab">Müfredat</div><div class="tab">Eğitmen</div><div class="tab">Yorumlar</div></div>
+      <p style="font-size:14px;color:var(--muted)">Seçili sekme amber alt çizgiyle belirtilir.</p>
+    </div>
+    <div class="card-panel">
+      <h4 style="margin-bottom:14px">Uyarılar</h4>
+      <div class="alert alert-success"><span class="ic">✓</span><div>Kursu başarıyla tamamladın. Sertifikan hazır.</div></div>
+      <div class="alert alert-info"><span class="ic">ℹ</span><div>Yeni bölüm eklendi: "JWT Güvenliği".</div></div>
+      <div class="alert alert-warn"><span class="ic">!</span><div>Zorunlu KVKK eğitiminin son 3 günü.</div></div>
+      <div class="alert alert-danger"><span class="ic">✕</span><div>Sınavı geçmek için en az %70 gerekir.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<div class="foot"><div class="wrap">
+  Lumio — Marka &amp; Tasarım Sistemi · v1.0 · Bu belge canlı stil rehberidir; tüm renk, tipografi ve bileşenler üretimde CSS değişkenleri (design token) olarak uygulanır.
+</div></div>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+<svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><title>Lumio icon</title>
+  <g transform="translate(0,20)">
+    <path d="M48 152 L128 136 L208 152 L208 186 L128 170 L48 186 Z" fill="#ffffff"/>
+    <circle cx="128" cy="98" r="23" fill="#ffffff"/>
+    <path d="M128 62 V38" stroke="#ffffff" stroke-width="17" stroke-linecap="round"/>
+    <path d="M172 76 L190 56" stroke="#ffffff" stroke-width="17" stroke-linecap="round"/>
+    <path d="M84 76 L66 56" stroke="#ffffff" stroke-width="17" stroke-linecap="round"/>
+  </g>
+</svg>
