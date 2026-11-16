@@ -1,7 +1,14 @@
 import type { PrismaClient } from './db.js';
 
 /** Models whose rows belong to exactly one organization through `orgId`. */
-const TENANT_MODELS = new Set(['User', 'Session', 'AuditLog', 'Enrollment', 'WishlistItem']);
+const TENANT_MODELS = new Set([
+  'User',
+  'Session',
+  'AuditLog',
+  'Enrollment',
+  'WishlistItem',
+  'LessonProgress',
+]);
 
 const READ_OR_WRITE_BY_WHERE = new Set([
   'findUnique',

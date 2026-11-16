@@ -20,6 +20,7 @@ import type { PrismaClient } from '../db.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { auth, optionalAuth, requireAuth } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
+import { courseProgress } from './learn.js';
 import type { Services } from '../services.js';
 
 const NEW_FOR_DAYS = 45;
@@ -373,16 +374,53 @@ export function learningRouter(services: Services): Router {
   router.get('/learning', requireAuth(services), async (req, res) => {
     const context = auth(req);
     const locale = localeOf(req);
-    const enrollments = await context.db.enrollment.findMany({
-      where: { userId: context.userId },
-      include: { course: { include: cardInclude } },
-      orderBy: { createdAt: 'desc' },
+    const [enrollments, progress] = await Promise.all([
+      context.db.enrollment.findMany({
+        where: { userId: context.userId },
+        include: {
+          course: {
+            include: {
+              ...cardInclude,
+              sections: {
+                orderBy: { position: 'asc' },
+                select: {
+                  lessons: { orderBy: { position: 'asc' }, select: { id: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+      context.db.lessonProgress.findMany({
+        where: { userId: context.userId },
+        select: { lessonId: true, completedAt: true, updatedAt: true },
+      }),
+    ]);
+
+    const completed = new Set(progress.filter((row) => row.completedAt).map((row) => row.lessonId));
+    const lastTouched = new Map(progress.map((row) => [row.lessonId, row.updatedAt.getTime()]));
+
+    const items = enrollments.map((enrollment) => {
+      const lessonIds = enrollment.course.sections.flatMap((section) =>
+        section.lessons.map((lesson) => lesson.id),
+      );
+      const done = lessonIds.filter((id) => completed.has(id)).length;
+      const activity = Math.max(
+        enrollment.createdAt.getTime(),
+        ...lessonIds.map((id) => lastTouched.get(id) ?? 0),
+      );
+      const item: LearningItem = {
+        course: toCard(enrollment.course, locale),
+        enrolledAt: enrollment.createdAt.toISOString(),
+        progress: courseProgress(done, lessonIds.length),
+        resumeLessonId: lessonIds.find((id) => !completed.has(id)) ?? lessonIds[0] ?? null,
+      };
+      return { item, activity };
     });
-    const body: LearningItem[] = enrollments.map((enrollment) => ({
-      course: toCard(enrollment.course, locale),
-      enrolledAt: enrollment.createdAt.toISOString(),
-    }));
-    res.json(body);
+
+    // The course worked on most recently comes first: that is what "continue" means.
+    items.sort((a, b) => b.activity - a.activity);
+    res.json(items.map(({ item }) => item));
   });
 
   router.get('/wishlist', requireAuth(services), async (req, res) => {
