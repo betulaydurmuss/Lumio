@@ -2,10 +2,13 @@ import { MAIL_QUEUE, type MailJob } from '@lumio/shared';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createPrisma } from './db.js';
 import { createLogger } from './logger.js';
+import { MediaSigner } from './media/signer.js';
+import { LocalMediaStore } from './media/store.js';
 import { TokenService } from './security/tokens.js';
 
 const config = loadConfig();
@@ -29,6 +32,12 @@ const app = createApp({
     encryptionKey: Buffer.from(config.ENCRYPTION_KEY, 'base64'),
     webOrigin: config.WEB_ORIGIN,
     secureCookies: config.NODE_ENV === 'production',
+    media: {
+      store: new LocalMediaStore(
+        config.MEDIA_DIR ?? fileURLToPath(new URL('../media', import.meta.url)),
+      ),
+      signer: new MediaSigner(config.ACCESS_TOKEN_SECRET),
+    },
     mailer: {
       async send(job) {
         await mailQueue.add('send', job, {

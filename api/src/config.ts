@@ -14,6 +14,8 @@ const envSchema = z.object({
   }),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
+  /** Where lesson media is read from. Defaults to api/media. */
+  MEDIA_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });
 

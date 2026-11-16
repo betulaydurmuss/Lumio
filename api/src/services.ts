@@ -1,5 +1,7 @@
 import type { MailJob } from '@lumio/shared';
 import type { PrismaClient } from './db.js';
+import type { MediaSigner } from './media/signer.js';
+import type { MediaStore } from './media/store.js';
 import type { TokenService } from './security/tokens.js';
 
 export interface Mailer {
@@ -19,4 +21,5 @@ export interface Services {
   encryptionKey: Buffer;
   webOrigin: string;
   secureCookies: boolean;
+  media: { store: MediaStore; signer: MediaSigner };
 }
