@@ -6,3 +6,4 @@ export * from './mail.js';
 export * from './catalog.js';
 export * from './learn.js';
 export * from './certificate.js';
+export * from './admin.js';

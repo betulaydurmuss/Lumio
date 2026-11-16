@@ -92,6 +92,7 @@ export const memberSchema = z.object({
   role: roleSchema,
   emailVerified: z.boolean(),
   twoFactorEnabled: z.boolean(),
+  disabled: z.boolean(),
   createdAt: z.string(),
 });
 export type Member = z.infer<typeof memberSchema>;
