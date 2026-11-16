@@ -24,15 +24,42 @@ taken on trust.
 These are the properties the code is built to enforce. The table says honestly which ones are in
 place today and which are still being built.
 
-| Guarantee                                                                       | Status                                             |
-| ------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Configuration is validated at boot; a missing or weak secret stops the process  | In place                                           |
-| Every API response carries strict security headers and a request id             | In place                                           |
-| The API answers only the web origin, and is rate limited                        | In place                                           |
-| Every tenant-owned row carries `org_id`; one organization cannot read another's | Schema in place, enforcement in the sign-in sprint |
-| Passwords are hashed with argon2; admins cannot sign in without 2FA             | Sign-in sprint                                     |
-| Every critical action is written to an append-only audit log                    | Schema in place                                    |
-| Certificates are signed and verifiable at `/dogrula/:certificateNo`             | Certificate sprint                                 |
+| Guarantee                                                                               | Status             |
+| --------------------------------------------------------------------------------------- | ------------------ |
+| Configuration is validated at boot; a missing or weak secret stops the process          | In place           |
+| Every API response carries strict security headers, `no-store` and a request id         | In place           |
+| The API answers only the web origin, is rate limited, and checks a CSRF token on writes | In place           |
+| One organization cannot read, change or delete another's rows                           | In place, tested   |
+| Passwords are hashed with argon2id; five wrong attempts lock the account for 15 minutes | In place, tested   |
+| Admins cannot reach the admin area without TOTP two-factor authentication               | In place, tested   |
+| Revoking a session, or replaying a rotated refresh token, ends that session at once     | In place, tested   |
+| Every critical action is written to an audit log the database refuses to edit or delete | In place, tested   |
+| Certificates are signed and verifiable at `/dogrula/:certificateNo`                     | Certificate sprint |
+
+### How isolation is enforced
+
+A signed-in request never touches the raw database client. It gets a client produced by
+`scopedPrisma(orgId)` in [api/src/tenancy.ts](api/src/tenancy.ts), which adds the caller's
+organization to every query on a tenant table and stamps it on every row it creates. A route that
+forgets `where: { orgId }` still cannot see another organization, because the condition is added
+underneath it with `AND`, so a filter for a different `orgId` matches nothing instead of widening
+the scope.
+
+[api/test/tenancy.test.ts](api/test/tenancy.test.ts) signs in two companies and checks, over HTTP
+and against the scoped client directly, that neither can list, count, change, delete or revoke
+anything of the other's. Turning the scope off makes those tests fail.
+
+### Signing in
+
+- Sessions live in httpOnly, `SameSite=Strict` cookies. The access token lasts 15 minutes; the
+  refresh token is sent only to `/api/auth`, is stored as a hash, and changes on every use.
+- Presenting a refresh token that was already rotated away means it was copied, so the session is
+  revoked for both holders.
+- Every request checks the session in the database, so signing out a device takes effect at once
+  rather than when its access token expires.
+- Sign-up answers the same way whether or not the address is already registered, and sign-in gives
+  one error for an unknown address, a wrong password and a locked account.
+- TOTP seeds are encrypted with AES-256-GCM before they are stored, and a code is accepted once.
 
 ## What is stored, and what is never stored
 
@@ -40,7 +67,8 @@ place today and which are still being built.
 | -------------------------------------------------------- | ----------------------------------------------------- |
 | Name, work email, organization, role, preferred language | Plain-text passwords (only an argon2 hash)            |
 | Course progress, quiz attempts, issued certificates      | Card numbers (payments are tokenized by the provider) |
-| Audit records: who did what, when, from which address    | Refresh tokens (only their hash)                      |
+| Audit records: who did what, when, from which address    | Refresh tokens and verification links (only a hash)   |
+| Device and IP address of each active session             | TOTP seeds in readable form (only AES-256-GCM)        |
 
 Fonts are served from the platform itself, so a visitor's browser does not contact a third-party
 font service.
@@ -83,7 +111,10 @@ docker compose up --build
 
 Then open http://localhost:8080. The API health check is at
 http://localhost:8080/api/health, and mail sent in development lands in Mailpit at
-http://localhost:8026.
+http://localhost:8026, which is where the verification link arrives after signing up.
+
+A company account makes you its admin. The admin area at `/admin` opens once two-factor
+authentication is on, from `/account`.
 
 For development with hot reload, start only the services and run the apps on the host:
 
@@ -104,6 +135,9 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+The API tests need the Compose PostgreSQL running. They create and migrate a separate `lumio_test`
+database on their own, so your development data is never touched.
 
 ## Deployment
 
