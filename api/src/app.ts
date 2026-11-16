@@ -15,6 +15,7 @@ import { certificatesRouter, myCertificatesRouter } from './routes/certificates.
 import { learnRouter } from './routes/learn.js';
 import { mediaRouter } from './routes/media.js';
 import { orgRouter } from './routes/org.js';
+import { platformRouter } from './routes/platform.js';
 import type { Services } from './services.js';
 
 export interface AppDeps {
@@ -88,6 +89,7 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api', csrfProtection);
   app.use('/api/auth', authRouter(deps.services, deps.auth));
   app.use('/api/org', orgRouter(deps.services));
+  app.use('/api/platform', platformRouter(deps.services));
   app.use('/api/catalog', catalogRouter(deps.services));
   app.use('/api/me', learningRouter(deps.services));
   app.use('/api/learn', learnRouter(deps.services));
