@@ -14,7 +14,15 @@ export type AuditAction =
   | 'course.enrolled'
   | 'course.completed'
   | 'certificate.issued'
-  | 'certificate.revoked';
+  | 'certificate.revoked'
+  | 'member.invited'
+  | 'invitation.revoked'
+  | 'invitation.accepted'
+  | 'member.role_changed'
+  | 'member.deactivated'
+  | 'member.reactivated'
+  | 'course.published'
+  | 'course.unpublished';
 
 export interface AuditEntry {
   orgId: string | null;

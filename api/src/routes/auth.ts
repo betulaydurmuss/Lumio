@@ -1,4 +1,6 @@
 import {
+  acceptInvitationSchema,
+  invitationTokenSchema,
   loginSchema,
   registerSchema,
   rolesRequiringTwoFactor,
@@ -8,6 +10,7 @@ import {
   type Me,
   type Role,
   type SessionInfo,
+  type InvitationPreview,
   type TotpSetup,
 } from '@lumio/shared';
 import { Router, type Request, type Response } from 'express';
@@ -245,6 +248,8 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       await recordFailure(req, user);
       throw invalidCredentials();
     }
+    // Same answer as a wrong password: a deactivated account reveals nothing new.
+    if (user.disabledAt) throw invalidCredentials();
     if (!user.emailVerifiedAt) {
       throw new HttpError(403, 'email_not_verified', 'Verify your email address first');
     }
@@ -283,6 +288,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       throw new HttpError(401, 'challenge_expired', 'Sign in again');
     }
     if (user.lockedUntil && user.lockedUntil > new Date()) throw invalidCredentials();
+    if (user.disabledAt) throw invalidCredentials();
 
     const secret = decrypt(user.totpSecret, services.encryptionKey);
     const fresh = await services.replay.claim(`totp:${user.id}:${code}`, 90);
@@ -321,7 +327,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
 
     const session = await prisma.session.findUnique({
       where: { refreshTokenHash: digest },
-      include: { user: { select: { role: true } } },
+      include: { user: { select: { role: true, disabledAt: true } } },
     });
 
     if (!session) {
@@ -340,7 +346,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       clearSessionCookies(res, secure);
       throw new HttpError(401, 'unauthenticated', 'Sign in required');
     }
-    if (session.revokedAt || session.expiresAt < new Date()) {
+    if (session.revokedAt || session.expiresAt < new Date() || session.user.disabledAt) {
       clearSessionCookies(res, secure);
       throw new HttpError(401, 'unauthenticated', 'Session has ended');
     }
@@ -494,6 +500,77 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     });
     setAccessCookie(res, secure, access);
     res.json({ status: 'enabled' });
+  });
+
+  /** A usable invitation for this token, or a 400 that does not say why. */
+  async function openInvitation(token: string) {
+    const invitation = await prisma.invitation.findUnique({
+      where: { tokenHash: hashToken(token) },
+      include: { organization: true },
+    });
+    if (
+      !invitation ||
+      invitation.acceptedAt ||
+      invitation.revokedAt ||
+      invitation.expiresAt < new Date() ||
+      invitation.role === 'platform_admin'
+    ) {
+      throw new HttpError(400, 'invalid_token', 'This invitation is invalid or has expired');
+    }
+    return { ...invitation, role: invitation.role };
+  }
+
+  // The token travels in the body, not the URL, so it never lands in access logs.
+  router.post('/invitations/lookup', limiter, async (req, res) => {
+    const { token } = invitationTokenSchema.parse(req.body);
+    const invitation = await openInvitation(token);
+    const body: InvitationPreview = {
+      organizationName: invitation.organization.name,
+      email: invitation.email,
+      role: invitation.role,
+    };
+    res.json(body);
+  });
+
+  router.post('/invitations/accept', limiter, async (req, res) => {
+    const input = acceptInvitationSchema.parse(req.body);
+    const invitation = await openInvitation(input.token);
+    if (await prisma.user.findUnique({ where: { email: invitation.email } })) {
+      throw new HttpError(409, 'email_taken', 'This address already has a Lumio account');
+    }
+    const passwordHash = await hashPassword(input.password);
+
+    await prisma.$transaction(async (tx) => {
+      // Conditional, so the same link accepted twice at once only works once.
+      const claimed = await tx.invitation.updateMany({
+        where: { id: invitation.id, acceptedAt: null, revokedAt: null },
+        data: { acceptedAt: new Date() },
+      });
+      if (claimed.count === 0) {
+        throw new HttpError(400, 'invalid_token', 'This invitation is invalid or has expired');
+      }
+      const user = await tx.user.create({
+        data: {
+          orgId: invitation.orgId,
+          email: invitation.email,
+          displayName: input.displayName,
+          passwordHash,
+          role: invitation.role,
+          locale: input.locale,
+          // Opening the emailed link is the proof the address works.
+          emailVerifiedAt: new Date(),
+        },
+      });
+      await audit(tx, {
+        orgId: invitation.orgId,
+        actorId: user.id,
+        action: 'invitation.accepted',
+        targetType: 'invitation',
+        targetId: invitation.id,
+        ipAddress: req.ip,
+      });
+    });
+    res.status(201).json({ status: 'joined' });
   });
 
   return router;

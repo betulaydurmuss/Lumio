@@ -38,3 +38,49 @@ export function verificationMail(params: {
 <p style="color:#6B7280">${escapeHtml(t.ignore)}</p>`;
   return { to: params.to, subject: t.subject, text, html };
 }
+
+const invitationCopy = {
+  tr: {
+    subject: (org: string) => `${org} seni Lumio'ya davet ediyor`,
+    body: (org: string, inviter: string) =>
+      `${inviter}, seni Lumio'da ${org} ekibine katılmaya davet etti. Hesabını oluşturmak için aşağıdaki bağlantıyı aç. Bağlantı 7 gün geçerli ve yalnızca bir kez kullanılabilir.`,
+    ignore: 'Bu daveti beklemiyorsan bu e-postayı yok sayabilirsin.',
+  },
+  en: {
+    subject: (org: string) => `${org} invites you to Lumio`,
+    body: (org: string, inviter: string) =>
+      `${inviter} invited you to join ${org} on Lumio. Open the link below to create your account. The link is valid for 7 days and can be used once.`,
+    ignore: 'If you were not expecting this invitation, you can ignore this email.',
+  },
+} as const;
+
+/** Sent in both languages: the invitee has not chosen one yet. */
+export function invitationMail(params: {
+  to: string;
+  organization: string;
+  inviter: string;
+  link: string;
+}): MailJob {
+  const parts = (['tr', 'en'] as const).map((locale) => invitationCopy[locale]);
+  const text = parts
+    .map((copy) =>
+      [copy.body(params.organization, params.inviter), '', params.link, '', copy.ignore].join('\n'),
+    )
+    .join('\n\n— — —\n\n');
+  const html = parts
+    .map(
+      (copy) => `<p>${escapeHtml(copy.body(params.organization, params.inviter))}</p>
+<p><a href="${escapeHtml(params.link)}">${escapeHtml(params.link)}</a></p>
+<p style="color:#6B7280">${escapeHtml(copy.ignore)}</p>`,
+    )
+    .join('<hr>');
+  // Names can be 120 characters; the subject has room for two short ones.
+  const org =
+    params.organization.length > 50 ? `${params.organization.slice(0, 49)}…` : params.organization;
+  return {
+    to: params.to,
+    subject: `${invitationCopy.tr.subject(org)} · ${invitationCopy.en.subject(org)}`,
+    text,
+    html,
+  };
+}
