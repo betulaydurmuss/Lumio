@@ -15,6 +15,8 @@ const KNOWN = new Set([
   'forbidden',
   'invalid_input',
   'totp_already_enabled',
+  'payment_required',
+  'not_found',
 ]);
 
 export function errorKey(error: unknown): string {
