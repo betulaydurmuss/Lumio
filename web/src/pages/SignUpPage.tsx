@@ -1,17 +1,28 @@
 import { PASSWORD_MIN_LENGTH, type Locale } from '@lumio/shared';
 import { useMutation } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { Building2, User } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { authApi } from '../api/auth.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 
 type AccountType = 'personal' | 'company';
 
+const accountTypes = [
+  { type: 'personal', Icon: User },
+  { type: 'company', Icon: Building2 },
+] as const;
+
 export function SignUpPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [accountType, setAccountType] = useState<AccountType>('personal');
+  const [params] = useSearchParams();
+  // "For teams" links arrive with ?type=company so the company form is already open.
+  const requestedType: AccountType = params.get('type') === 'company' ? 'company' : 'personal';
+  const [accountType, setAccountType] = useState<AccountType>(requestedType);
+  // Following the link again while already on this page should still switch the form.
+  useEffect(() => setAccountType(requestedType), [requestedType]);
   const [organizationName, setOrganizationName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -42,21 +53,25 @@ export function SignUpPage() {
         <p className="lead">{t('signUp.lead')}</p>
         {register.error && <ErrorAlert error={register.error} />}
 
-        <div className="tabs" role="radiogroup" aria-label={t('signUp.accountType')}>
-          {(['personal', 'company'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              className="tab"
-              role="radio"
-              aria-checked={accountType === type}
-              aria-selected={accountType === type}
-              onClick={() => setAccountType(type)}
-            >
-              {t(`signUp.${type}`)}
-            </button>
+        <fieldset className="choice-group">
+          <legend>{t('signUp.accountType')}</legend>
+          {accountTypes.map(({ type, Icon }) => (
+            <label key={type} className="choice" data-checked={accountType === type}>
+              <input
+                type="radio"
+                name="accountType"
+                value={type}
+                checked={accountType === type}
+                onChange={() => setAccountType(type)}
+              />
+              <Icon size={20} aria-hidden="true" />
+              <span>
+                <strong>{t(`signUp.${type}`)}</strong>
+                <small>{t(`signUp.${type}Hint`)}</small>
+              </span>
+            </label>
           ))}
-        </div>
+        </fieldset>
 
         {accountType === 'company' && (
           <>

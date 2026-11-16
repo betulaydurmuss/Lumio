@@ -21,7 +21,7 @@ export function HomePage() {
             <Link to="/courses" className="btn btn-accent btn-lg">
               {t('home.browse')}
             </Link>
-            <Link to="/business" className="btn btn-secondary btn-lg">
+            <Link to="/sign-up?type=company" className="btn btn-secondary btn-lg">
               {t('home.forTeams')}
             </Link>
           </div>

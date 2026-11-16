@@ -75,7 +75,7 @@ export function Layout() {
           </Link>
           <nav>
             <NavLink to="/courses">{t('nav.catalog')}</NavLink>
-            <NavLink to="/business">{t('nav.business')}</NavLink>
+            <NavLink to="/sign-up?type=company">{t('nav.business')}</NavLink>
             <LanguageSwitch />
             <AccountNav />
           </nav>

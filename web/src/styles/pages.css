@@ -214,3 +214,65 @@
 .topbar nav .btn {
   margin-left: 4px;
 }
+
+/* Account type picker on sign-up */
+.choice-group {
+  border: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.choice-group legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-700);
+  margin-bottom: 8px;
+  padding: 0;
+}
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: #fff;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.choice:hover {
+  border-color: var(--navy-500);
+}
+.choice[data-checked='true'] {
+  border-color: var(--amber-500);
+  background: var(--amber-50);
+  box-shadow: 0 0 0 3px var(--amber-50);
+}
+.choice input {
+  margin: 3px 0 0;
+  accent-color: var(--amber-600);
+}
+.choice > svg {
+  color: var(--navy-700);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.choice span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.choice strong {
+  font-size: 14px;
+  color: var(--navy-800);
+}
+.choice small {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.choice:has(input:focus-visible) {
+  outline: 2px solid var(--amber-500);
+  outline-offset: 2px;
+}
