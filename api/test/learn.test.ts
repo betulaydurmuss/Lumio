@@ -158,7 +158,7 @@ describe('progress', () => {
     const done = await saveProgress(client, video.id, { positionSeconds: 28, completed: true });
     expect(done.status).toBe(200);
     expect(done.body.completed).toBe(true);
-    expect(done.body.course).toEqual({ completed: 1, total: 8, percent: 13 });
+    expect(done.body.course).toEqual({ completed: 1, total: 10, percent: 10 });
   });
 
   it('remembers the position to resume a video', async () => {
