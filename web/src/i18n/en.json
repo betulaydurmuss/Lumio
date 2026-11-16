@@ -63,7 +63,9 @@
     "forbidden": "You do not have access to this page.",
     "invalid_input": "Some fields are not valid. Check them and try again.",
     "totp_already_enabled": "Two-factor authentication is already on.",
-    "unknown": "Something went wrong. Please try again."
+    "unknown": "Something went wrong. Please try again.",
+    "payment_required": "This course is paid. Online payment opens soon; until then you can enrol in the free courses.",
+    "not_found": "What you are looking for could not be found."
   },
   "signIn": {
     "title": "Sign in",
@@ -158,5 +160,117 @@
     "ip": "IP",
     "noAudit": "No entries yet.",
     "setup2fa": "Turn on two-factor authentication"
+  },
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "all": "All levels"
+  },
+  "languages": {
+    "tr": "Turkish",
+    "en": "English"
+  },
+  "card": {
+    "free": "Free",
+    "new": "New",
+    "certificate": "Certificate",
+    "lessons_one": "{{count}} lesson",
+    "lessons_other": "{{count}} lessons",
+    "students_one": "{{formatted}} learner",
+    "students_other": "{{formatted}} learners",
+    "rating": "Rated {{rating}}, {{count}} reviews",
+    "enrolled": "Enrolled"
+  },
+  "catalog": {
+    "title": "Course catalog",
+    "lead": "Animated lessons and certified courses in web development, cybersecurity and KVKK compliance.",
+    "searchLabel": "Search courses",
+    "searchPlaceholder": "Search for a course, topic or instructor",
+    "search": "Search",
+    "suggestedCourses": "Courses",
+    "popularSearches": "Popular searches",
+    "results_one": "{{count}} course",
+    "results_other": "{{count}} courses",
+    "resultsFor": "{{count}} courses for \"{{q}}\"",
+    "sort": "Sort by",
+    "sorts": {
+      "popular": "Most popular",
+      "newest": "Newest",
+      "rating": "Highest rated",
+      "completed": "Most completed"
+    },
+    "filters": "Filters",
+    "showFilters": "Show filters",
+    "hideFilters": "Hide filters",
+    "category": "Category",
+    "allCategories": "All categories",
+    "level": "Level",
+    "duration": "Length",
+    "durations": {
+      "short": "0–2 hours",
+      "medium": "2–6 hours",
+      "long": "Over 6 hours"
+    },
+    "price": "Price",
+    "prices": {
+      "free": "Free",
+      "paid": "Paid"
+    },
+    "language": "Course language",
+    "rating": "Rating",
+    "ratingAtLeast": "{{value}} and up",
+    "certificateOnly": "With a certificate only",
+    "any": "Any",
+    "clear": "Clear filters",
+    "emptyTitle": "No course matches these filters",
+    "emptyBody": "Try removing a filter or searching for a different word.",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{page}} of {{pages}}"
+  },
+  "course": {
+    "breadcrumb": "Courses",
+    "by": "Taught by {{name}}",
+    "updated": "Last updated {{date}}",
+    "taughtIn": "Taught in {{language}}",
+    "outcomes": "What you will learn",
+    "curriculum": "Curriculum",
+    "curriculumSummary": "{{sections}} sections · {{lessons}} lessons · {{duration}}",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "preview": "Preview",
+    "lessonTypes": {
+      "video": "Video",
+      "interactive": "Interactive",
+      "reading": "Reading"
+    },
+    "requirements": "Requirements",
+    "audience": "Who this course is for",
+    "about": "About this course",
+    "instructor": "Instructor",
+    "instructorStats": "{{courses}} courses · {{students}} learners · ★ {{rating}}",
+    "otherCourses": "More from this instructor",
+    "related": "You might also like",
+    "enroll": "Enrol now",
+    "enrolledNote": "You are enrolled. The course is in \"Continue where you left off\" on the home page.",
+    "goHome": "Go to the home page",
+    "signInToEnroll": "Sign in to enrol",
+    "buy": "Buy",
+    "paidNote": "Online payment opens soon. You can already save the course to your wishlist.",
+    "wishlistAdd": "Add to wishlist",
+    "wishlistRemove": "Remove from wishlist",
+    "includes": "This course includes",
+    "includesDuration": "{{duration}} of content",
+    "includesCertificate": "A verifiable digital certificate",
+    "includesPreview": "Free preview lessons",
+    "notFoundTitle": "Course not found",
+    "notFoundBody": "This course may have been unpublished, or its address may have changed.",
+    "backToCatalog": "Back to the catalog"
+  },
+  "homeRails": {
+    "continue": "Continue where you left off",
+    "popular": "Popular courses",
+    "seeAll": "See all"
   }
 }

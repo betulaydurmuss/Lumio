@@ -12,6 +12,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/pages.css';
+import './styles/catalog.css';
 import './i18n/index.js';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,6 +23,8 @@ import { Layout } from './components/Layout.js';
 import { RequireAuth } from './components/RequireAuth.js';
 import { AccountPage } from './pages/AccountPage.js';
 import { AdminPage } from './pages/AdminPage.js';
+import { CatalogPage } from './pages/CatalogPage.js';
+import { CoursePage } from './pages/CoursePage.js';
 import { CheckEmailPage, VerifyEmailPage } from './pages/EmailPages.js';
 import { HomePage } from './pages/HomePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
@@ -37,6 +40,8 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'courses', element: <CatalogPage /> },
+      { path: 'courses/:slug', element: <CoursePage /> },
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'sign-up', element: <SignUpPage /> },
       { path: 'check-email', element: <CheckEmailPage /> },

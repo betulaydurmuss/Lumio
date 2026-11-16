@@ -63,7 +63,9 @@
     "forbidden": "Bu sayfayı görmeye yetkin yok.",
     "invalid_input": "Bazı alanlar geçersiz. Kontrol edip tekrar dene.",
     "totp_already_enabled": "İki adımlı doğrulama zaten açık.",
-    "unknown": "Bir şeyler ters gitti. Lütfen tekrar dene."
+    "unknown": "Bir şeyler ters gitti. Lütfen tekrar dene.",
+    "payment_required": "Bu kurs ücretli. Online ödeme yakında açılacak; o zamana kadar ücretsiz kurslara kaydolabilirsin.",
+    "not_found": "Aradığın içerik bulunamadı."
   },
   "signIn": {
     "title": "Giriş yap",
@@ -158,5 +160,117 @@
     "ip": "IP",
     "noAudit": "Henüz kayıt yok.",
     "setup2fa": "İki adımlı doğrulamayı aç"
+  },
+  "levels": {
+    "beginner": "Başlangıç",
+    "intermediate": "Orta",
+    "advanced": "İleri",
+    "all": "Herkes"
+  },
+  "languages": {
+    "tr": "Türkçe",
+    "en": "İngilizce"
+  },
+  "card": {
+    "free": "Ücretsiz",
+    "new": "Yeni",
+    "certificate": "Sertifikalı",
+    "lessons_one": "{{count}} ders",
+    "lessons_other": "{{count}} ders",
+    "students_one": "{{formatted}} öğrenci",
+    "students_other": "{{formatted}} öğrenci",
+    "rating": "{{rating}} puan, {{count}} değerlendirme",
+    "enrolled": "Kayıtlısın"
+  },
+  "catalog": {
+    "title": "Kurs kataloğu",
+    "lead": "Web geliştirme, siber güvenlik ve KVKK uyumu için animasyonlu dersler ve sertifikalı kurslar.",
+    "searchLabel": "Kurslarda ara",
+    "searchPlaceholder": "Kurs, konu ya da eğitmen ara",
+    "search": "Ara",
+    "suggestedCourses": "Kurslar",
+    "popularSearches": "En çok arananlar",
+    "results_one": "{{count}} kurs",
+    "results_other": "{{count}} kurs",
+    "resultsFor": "\"{{q}}\" için {{count}} kurs",
+    "sort": "Sırala",
+    "sorts": {
+      "popular": "En popüler",
+      "newest": "En yeni",
+      "rating": "En yüksek puan",
+      "completed": "En çok tamamlanan"
+    },
+    "filters": "Filtreler",
+    "showFilters": "Filtreleri göster",
+    "hideFilters": "Filtreleri gizle",
+    "category": "Kategori",
+    "allCategories": "Tüm kategoriler",
+    "level": "Seviye",
+    "duration": "Süre",
+    "durations": {
+      "short": "0–2 saat",
+      "medium": "2–6 saat",
+      "long": "6 saatten uzun"
+    },
+    "price": "Fiyat",
+    "prices": {
+      "free": "Ücretsiz",
+      "paid": "Ücretli"
+    },
+    "language": "Kurs dili",
+    "rating": "Puan",
+    "ratingAtLeast": "{{value}} ve üzeri",
+    "certificateOnly": "Yalnızca sertifikalı",
+    "any": "Tümü",
+    "clear": "Filtreleri temizle",
+    "emptyTitle": "Bu filtrelere uyan kurs yok",
+    "emptyBody": "Birkaç filtreyi kaldırmayı ya da farklı bir kelimeyle aramayı dene.",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "pageOf": "Sayfa {{page}} / {{pages}}"
+  },
+  "course": {
+    "breadcrumb": "Kurslar",
+    "by": "Eğitmen: {{name}}",
+    "updated": "Son güncelleme: {{date}}",
+    "taughtIn": "Kurs dili: {{language}}",
+    "outcomes": "Neler öğreneceksin",
+    "curriculum": "Müfredat",
+    "curriculumSummary": "{{sections}} bölüm · {{lessons}} ders · {{duration}}",
+    "expandAll": "Tümünü aç",
+    "collapseAll": "Tümünü kapat",
+    "preview": "Önizleme",
+    "lessonTypes": {
+      "video": "Video",
+      "interactive": "Etkileşimli",
+      "reading": "Okuma"
+    },
+    "requirements": "Gereksinimler",
+    "audience": "Kimler için?",
+    "about": "Kurs hakkında",
+    "instructor": "Eğitmen",
+    "instructorStats": "{{courses}} kurs · {{students}} öğrenci · ★ {{rating}}",
+    "otherCourses": "Eğitmenin diğer kursları",
+    "related": "Bunlar da ilgini çekebilir",
+    "enroll": "Hemen kaydol",
+    "enrolledNote": "Bu kursa kayıtlısın. Kurs, ana sayfadaki \"Kaldığın yerden devam et\" bölümünde.",
+    "goHome": "Ana sayfaya git",
+    "signInToEnroll": "Kaydolmak için giriş yap",
+    "buy": "Satın al",
+    "paidNote": "Online ödeme yakında açılacak. Kursu şimdiden istek listene ekleyebilirsin.",
+    "wishlistAdd": "İstek listesine ekle",
+    "wishlistRemove": "İstek listesinden çıkar",
+    "includes": "Bu kursta",
+    "includesDuration": "{{duration}} içerik",
+    "includesCertificate": "Doğrulanabilir dijital sertifika",
+    "includesPreview": "Ücretsiz önizleme dersleri",
+    "notFoundTitle": "Kurs bulunamadı",
+    "notFoundBody": "Bu kurs yayından kaldırılmış ya da adresi değişmiş olabilir.",
+    "backToCatalog": "Kataloğa dön"
+  },
+  "homeRails": {
+    "continue": "Kaldığın yerden devam et",
+    "popular": "Popüler kurslar",
+    "seeAll": "Tümünü gör"
   }
 }
