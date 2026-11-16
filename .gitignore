@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.vite/
+
+.env
+.env.*
+!.env.example
+
+*.log
+npm-debug.log*
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+playwright-report/
+test-results/
+
+# generated Prisma client
+api/src/generated/

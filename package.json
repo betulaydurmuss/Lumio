@@ -1,0 +1,40 @@
+{
+  "name": "lumio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Online learning platform for web, cybersecurity and compliance training.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "shared",
+    "api",
+    "worker",
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run build --workspace shared && concurrently -n api,worker,web -c yellow,blue,magenta \"npm run dev -w api\" \"npm run dev -w worker\" \"npm run dev -w web\"",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate": "npm run db:migrate --workspace api",
+    "db:seed": "npm run db:seed --workspace api",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "concurrently": "^9.2.5",
+    "prettier": "^3.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "msgpackr-extract": false,
+    "@prisma/engines@7.10.1": true,
+    "prisma@7.10.1": true
+  }
+}

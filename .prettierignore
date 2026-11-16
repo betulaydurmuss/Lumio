@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+package-lock.json
+brand/design-system
+api/prisma/migrations
+api/src/generated
