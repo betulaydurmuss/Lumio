@@ -25,11 +25,17 @@ enum Locale {
   en
 }
 
+enum OrganizationKind {
+  personal
+  company
+}
+
 model Organization {
-  id        String   @id @default(uuid()) @db.Uuid
-  slug      String   @unique
+  id        String           @id @default(uuid()) @db.Uuid
+  slug      String           @unique
   name      String
-  createdAt DateTime @default(now()) @map("created_at")
+  kind      OrganizationKind @default(company)
+  createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   users     User[]
@@ -48,19 +54,37 @@ model User {
   role            Role      @default(learner)
   locale          Locale    @default(tr)
   emailVerifiedAt DateTime? @map("email_verified_at")
+  /// AES-256-GCM ciphertext, never the raw base32 secret.
   totpSecret      String?   @map("totp_secret")
+  totpEnabledAt   DateTime? @map("totp_enabled_at")
   failedLogins    Int       @default(0) @map("failed_logins")
   lockedUntil     DateTime? @map("locked_until")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  sessions     Session[]
-  auditLogs    AuditLog[]
+  organization       Organization        @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  sessions           Session[]
+  auditLogs          AuditLog[]
+  verificationTokens EmailVerification[]
 
-  @@unique([orgId, email])
-  @@index([email])
+  /// Stored lower-cased. One address is one account, so sign-in needs no organization picker.
+  @@unique([email])
+  @@index([orgId])
   @@map("users")
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verifications")
 }
 
 model Session {
@@ -68,6 +92,9 @@ model Session {
   orgId            String    @map("org_id") @db.Uuid
   userId           String    @map("user_id") @db.Uuid
   refreshTokenHash String    @unique @map("refresh_token_hash")
+  /// The hash this session rotated away from. Seeing it again means the token was stolen.
+  previousHash     String?   @unique @map("previous_hash")
+  mfaVerified      Boolean   @default(false) @map("mfa_verified")
   userAgent        String?   @map("user_agent")
   ipAddress        String?   @map("ip_address")
   createdAt        DateTime  @default(now()) @map("created_at")
