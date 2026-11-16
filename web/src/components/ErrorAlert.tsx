@@ -17,6 +17,8 @@ const KNOWN = new Set([
   'totp_already_enabled',
   'payment_required',
   'not_found',
+  'not_enrolled',
+  'not_watched',
 ]);
 
 export function errorKey(error: unknown): string {

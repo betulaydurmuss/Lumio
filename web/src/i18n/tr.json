@@ -65,7 +65,9 @@
     "totp_already_enabled": "İki adımlı doğrulama zaten açık.",
     "unknown": "Bir şeyler ters gitti. Lütfen tekrar dene.",
     "payment_required": "Bu kurs ücretli. Online ödeme yakında açılacak; o zamana kadar ücretsiz kurslara kaydolabilirsin.",
-    "not_found": "Aradığın içerik bulunamadı."
+    "not_found": "Aradığın içerik bulunamadı.",
+    "not_enrolled": "Bu ders, kursa kayıtlı öğrencilere açık.",
+    "not_watched": "Dersi tamamlamak için videonun büyük bölümünü izlemelisin."
   },
   "signIn": {
     "title": "Giriş yap",
@@ -180,7 +182,8 @@
     "students_one": "{{formatted}} öğrenci",
     "students_other": "{{formatted}} öğrenci",
     "rating": "{{rating}} puan, {{count}} değerlendirme",
-    "enrolled": "Kayıtlısın"
+    "enrolled": "Kayıtlısın",
+    "progress": "%{{percent}} tamamlandı"
   },
   "catalog": {
     "title": "Kurs kataloğu",
@@ -266,11 +269,42 @@
     "includesPreview": "Ücretsiz önizleme dersleri",
     "notFoundTitle": "Kurs bulunamadı",
     "notFoundBody": "Bu kurs yayından kaldırılmış ya da adresi değişmiş olabilir.",
-    "backToCatalog": "Kataloğa dön"
+    "backToCatalog": "Kataloğa dön",
+    "start": "Kursa başla",
+    "continueCourse": "Kaldığın yerden devam et"
   },
   "homeRails": {
     "continue": "Kaldığın yerden devam et",
     "popular": "Popüler kurslar",
     "seeAll": "Tümünü gör"
+  },
+  "player": {
+    "backToCourse": "Kurs sayfası",
+    "progress": "%{{percent}} tamamlandı",
+    "progressLabel": "Kurs ilerlemesi",
+    "curriculum": "Müfredat",
+    "showCurriculum": "Müfredatı göster",
+    "hideCurriculum": "Müfredatı gizle",
+    "previous": "Önceki ders",
+    "next": "Sonraki ders",
+    "completed": "Tamamlandı",
+    "markComplete": "Dersi tamamla",
+    "videoHint": "Videonun %90’ını izlediğinde ders otomatik olarak tamamlanır.",
+    "speed": "Oynatma hızı",
+    "lockedTitle": "Bu ders kayıtlı öğrencilere açık",
+    "lockedBody": "Ücretsiz önizleme derslerini kayıt olmadan izleyebilirsin. Bütün derslere erişmek için kursa kaydol.",
+    "enrollCta": "Kurs sayfasına git",
+    "preparingTitle": "Bu dersin içeriği hazırlanıyor",
+    "preparingBody": "İçerik yakında eklenecek. Şimdilik sonraki derse geçebilirsin.",
+    "previewBanner": "Bir önizleme dersindesin. Bütün dersler ve ilerleme kaydı için kursa kaydol.",
+    "step": "Adım {{current}} / {{total}}",
+    "checkTitle": "Kontrol sorusu",
+    "correct": "Doğru!",
+    "incorrect": "Tam olarak değil.",
+    "continue": "Devam",
+    "finish": "Dersi bitir",
+    "allDoneTitle": "Tebrikler, kursun bütün derslerini tamamladın!",
+    "allDoneBody": "Kurs sonu sınavı ve doğrulanabilir sertifika yakında burada olacak.",
+    "lessonNotFound": "Bu ders bulunamadı."
   }
 }

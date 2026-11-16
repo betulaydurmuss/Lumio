@@ -65,7 +65,9 @@
     "totp_already_enabled": "Two-factor authentication is already on.",
     "unknown": "Something went wrong. Please try again.",
     "payment_required": "This course is paid. Online payment opens soon; until then you can enrol in the free courses.",
-    "not_found": "What you are looking for could not be found."
+    "not_found": "What you are looking for could not be found.",
+    "not_enrolled": "This lesson is open to learners enrolled in the course.",
+    "not_watched": "Watch most of the video to complete the lesson."
   },
   "signIn": {
     "title": "Sign in",
@@ -180,7 +182,8 @@
     "students_one": "{{formatted}} learner",
     "students_other": "{{formatted}} learners",
     "rating": "Rated {{rating}}, {{count}} reviews",
-    "enrolled": "Enrolled"
+    "enrolled": "Enrolled",
+    "progress": "{{percent}}% complete"
   },
   "catalog": {
     "title": "Course catalog",
@@ -266,11 +269,42 @@
     "includesPreview": "Free preview lessons",
     "notFoundTitle": "Course not found",
     "notFoundBody": "This course may have been unpublished, or its address may have changed.",
-    "backToCatalog": "Back to the catalog"
+    "backToCatalog": "Back to the catalog",
+    "start": "Start the course",
+    "continueCourse": "Continue where you left off"
   },
   "homeRails": {
     "continue": "Continue where you left off",
     "popular": "Popular courses",
     "seeAll": "See all"
+  },
+  "player": {
+    "backToCourse": "Course page",
+    "progress": "{{percent}}% complete",
+    "progressLabel": "Course progress",
+    "curriculum": "Curriculum",
+    "showCurriculum": "Show curriculum",
+    "hideCurriculum": "Hide curriculum",
+    "previous": "Previous lesson",
+    "next": "Next lesson",
+    "completed": "Completed",
+    "markComplete": "Complete lesson",
+    "videoHint": "The lesson completes on its own once you have watched 90% of the video.",
+    "speed": "Playback speed",
+    "lockedTitle": "This lesson is for enrolled learners",
+    "lockedBody": "You can watch the free preview lessons without enrolling. Enrol to open every lesson.",
+    "enrollCta": "Go to the course page",
+    "preparingTitle": "This lesson is being prepared",
+    "preparingBody": "Its content will be added soon. For now you can move on to the next lesson.",
+    "previewBanner": "You are in a preview lesson. Enrol for every lesson and to keep your progress.",
+    "step": "Step {{current}} of {{total}}",
+    "checkTitle": "Check your understanding",
+    "correct": "Correct!",
+    "incorrect": "Not quite.",
+    "continue": "Continue",
+    "finish": "Finish the lesson",
+    "allDoneTitle": "Well done, you have completed every lesson in this course!",
+    "allDoneBody": "The final quiz and your verifiable certificate will be here soon.",
+    "lessonNotFound": "This lesson could not be found."
   }
 }

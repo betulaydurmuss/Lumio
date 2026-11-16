@@ -13,6 +13,7 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/pages.css';
 import './styles/catalog.css';
+import './styles/player.css';
 import './i18n/index.js';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ import { CoursePage } from './pages/CoursePage.js';
 import { CheckEmailPage, VerifyEmailPage } from './pages/EmailPages.js';
 import { HomePage } from './pages/HomePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
+import { PlayerPage } from './pages/PlayerPage.js';
 import { SignInPage } from './pages/SignInPage.js';
 import { SignUpPage } from './pages/SignUpPage.js';
 
@@ -42,6 +44,9 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'courses', element: <CatalogPage /> },
       { path: 'courses/:slug', element: <CoursePage /> },
+      // Public: free preview lessons open without an account.
+      { path: 'learn/:slug', element: <PlayerPage /> },
+      { path: 'learn/:slug/:lessonId', element: <PlayerPage /> },
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'sign-up', element: <SignUpPage /> },
       { path: 'check-email', element: <CheckEmailPage /> },
