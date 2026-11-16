@@ -170,3 +170,19 @@ main {
     display: none;
   }
 }
+
+/* Small phones: keep the header on one line. Sign-up stays reachable from the sign-in page. */
+@media (max-width: 480px) {
+  .topbar .wrap {
+    gap: 8px;
+  }
+  .topbar nav {
+    gap: 2px;
+  }
+  .topbar nav .btn-accent {
+    display: none;
+  }
+  .topbar nav .btn-sm {
+    padding: 7px 10px;
+  }
+}
