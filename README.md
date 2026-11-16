@@ -94,12 +94,28 @@ The twelve courses, four instructors, ratings and learner counts loaded by `npm 
 demo content. The people are fictional, and the KVKK courses say plainly that they are awareness
 training rather than legal advice.
 
-The lesson player, quizzes and the signed certificate are the next sprints of the MVP.
+The player has three kinds of lesson. Video lessons remember the playback speed, show Turkish
+and English captions, resume where the learner stopped and count as complete once 90% has been
+played; the server checks that figure rather than taking the client's word. Reading lessons and
+interactive lessons, short animated steps with a question and an explained answer, are stored as
+structured content and rendered as text, so lesson content has no way to put script on the page.
+Progress belongs to the learner's organization like every other learner record.
+
+![An interactive lesson](docs/screenshots/player.png)
+
+Lesson media is never served from a public path. The API hands out a link signed with a key of
+its own that names one file and expires after four hours; changing a single character of it, or
+using it late, gets a refusal. Files sit behind a small storage interface. The local folder
+implementation is used today, and an S3-compatible one can replace it without touching the
+routes. Every video lesson in the demo plays the same 30-second clip in
+[api/media/demo](api/media/demo) until real lessons are recorded.
+
+Quizzes and the signed certificate are the next sprints of the MVP.
 
 ## Repository layout
 
 ```
-api/        Express + zod REST API, Prisma schema, migrations and the demo catalog seed
+api/        Express + zod REST API, Prisma schema, migrations, demo catalog and demo media
 worker/     BullMQ jobs: mail today; video processing and reports later
 web/        React + Vite client, design tokens, Turkish and English translations
 shared/     zod schemas and types used by both the API and the client
