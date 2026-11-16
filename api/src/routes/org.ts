@@ -1,4 +1,4 @@
-import type { AuditEntry, Member } from '@lumio/shared';
+import { localeSchema, type AuditEntry, type Member, type OrgCertificate } from '@lumio/shared';
 import { Router } from 'express';
 import { auth, requireAuth, requireMfaForAdmins, requireRole } from '../middleware/auth.js';
 import type { Services } from '../services.js';
@@ -38,6 +38,20 @@ export function orgRouter(services: Services): Router {
       targetId: entry.targetId,
       ipAddress: entry.ipAddress,
       createdAt: entry.createdAt.toISOString(),
+    }));
+    res.json(body);
+  });
+
+  router.get('/certificates', async (req, res) => {
+    const { db } = auth(req);
+    const locale = localeSchema.catch('tr').parse(req.query.locale);
+    const rows = await db.certificate.findMany({ orderBy: { issuedAt: 'desc' }, take: 200 });
+    const body: OrgCertificate[] = rows.map((row) => ({
+      certNo: row.certNo,
+      recipientName: row.recipientName,
+      courseTitle: locale === 'tr' ? row.courseTitleTr : row.courseTitleEn,
+      issuedAt: row.issuedAt.toISOString(),
+      revokedAt: row.revokedAt?.toISOString() ?? null,
     }));
     res.json(body);
   });

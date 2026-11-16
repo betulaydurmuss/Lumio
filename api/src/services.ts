@@ -1,4 +1,5 @@
 import type { MailJob } from '@lumio/shared';
+import type { CertificateKeyRing } from './certificates/signing.js';
 import type { PrismaClient } from './db.js';
 import type { MediaSigner } from './media/signer.js';
 import type { MediaStore } from './media/store.js';
@@ -22,4 +23,5 @@ export interface Services {
   webOrigin: string;
   secureCookies: boolean;
   media: { store: MediaStore; signer: MediaSigner };
+  certificates: CertificateKeyRing;
 }

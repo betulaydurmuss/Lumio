@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
+import { CertificateKeyRing } from './certificates/signing.js';
 import { loadConfig } from './config.js';
 import { createPrisma } from './db.js';
 import { createLogger } from './logger.js';
@@ -30,6 +31,7 @@ const app = createApp({
     prisma,
     tokens: new TokenService(config.ACCESS_TOKEN_SECRET),
     encryptionKey: Buffer.from(config.ENCRYPTION_KEY, 'base64'),
+    certificates: new CertificateKeyRing(prisma, Buffer.from(config.ENCRYPTION_KEY, 'base64')),
     webOrigin: config.WEB_ORIGIN,
     secureCookies: config.NODE_ENV === 'production',
     media: {

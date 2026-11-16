@@ -11,6 +11,7 @@ import { errorHandler, notFound } from './middleware/errors.js';
 import { authRouter, type AuthRouterOptions } from './routes/auth.js';
 import { healthRouter, type HealthChecks } from './routes/health.js';
 import { catalogRouter, learningRouter } from './routes/catalog.js';
+import { certificatesRouter, myCertificatesRouter } from './routes/certificates.js';
 import { learnRouter } from './routes/learn.js';
 import { mediaRouter } from './routes/media.js';
 import { orgRouter } from './routes/org.js';
@@ -91,6 +92,8 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/me', learningRouter(deps.services));
   app.use('/api/learn', learnRouter(deps.services));
   app.use('/api/media', mediaRouter(deps.services));
+  app.use('/api/certificates', certificatesRouter(deps.services));
+  app.use('/api/me', myCertificatesRouter(deps.services));
 
   app.use(notFound);
   app.use(errorHandler);
