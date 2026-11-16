@@ -47,6 +47,7 @@ const router = createBrowserRouter([
       // Public: free preview lessons open without an account.
       { path: 'learn/:slug', element: <PlayerPage /> },
       { path: 'learn/:slug/:lessonId', element: <PlayerPage /> },
+      { path: 'learn/:slug/quiz/:quizId', element: <PlayerPage /> },
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'sign-up', element: <SignUpPage /> },
       { path: 'check-email', element: <CheckEmailPage /> },

@@ -1,9 +1,10 @@
-import type { CourseOutline, LessonView } from '@lumio/shared';
+import type { CourseOutline, LessonView, OutlineQuiz } from '@lumio/shared';
 import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
   CircleCheck,
+  ClipboardCheck,
   Clock,
   Lock,
   MousePointerClick,
@@ -15,11 +16,12 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { useLocale } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
-import { useLesson, useOutline, useSaveProgress } from '../api/learn.js';
+import { useLesson, useOutline, useQuiz, useSaveProgress } from '../api/learn.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 import { InteractiveLesson } from '../components/lessons/InteractiveLesson.js';
 import { ReadingLesson } from '../components/lessons/ReadingLesson.js';
 import { VideoLesson } from '../components/lessons/VideoLesson.js';
+import { QuizPanel } from '../components/QuizPanel.js';
 import { PageSkeleton } from '../components/RequireAuth.js';
 import { formatDuration } from '../lib/format.js';
 
@@ -74,10 +76,57 @@ function Sidebar({
                 </li>
               );
             })}
+            {section.quiz && <QuizItem quiz={section.quiz} slug={slug} currentId={currentId} />}
           </ol>
         </div>
       ))}
+      {outline.finalQuiz && (
+        <div className="player-section">
+          <h4>{t('quiz.finalExam')}</h4>
+          <ol>
+            <QuizItem quiz={outline.finalQuiz} slug={slug} currentId={currentId} />
+          </ol>
+        </div>
+      )}
     </nav>
+  );
+}
+
+function QuizItem({
+  quiz,
+  slug,
+  currentId,
+}: {
+  quiz: OutlineQuiz;
+  slug: string;
+  currentId: string;
+}) {
+  const { t } = useTranslation();
+  const Icon = quiz.passed ? CircleCheck : quiz.locked || !quiz.accessible ? Lock : ClipboardCheck;
+  const content = (
+    <>
+      <Icon
+        size={16}
+        className={quiz.passed ? 'done' : undefined}
+        aria-label={quiz.passed ? t('quiz.passedBadge') : undefined}
+      />
+      <span className="player-lesson-title">{quiz.title}</span>
+      <span className="mono">{t('quiz.questions', { count: quiz.questionCount })}</span>
+    </>
+  );
+  return (
+    <li className="quiz-item">
+      {quiz.accessible || quiz.locked ? (
+        <Link
+          to={`/learn/${slug}/quiz/${quiz.id}`}
+          aria-current={quiz.id === currentId ? 'page' : undefined}
+        >
+          {content}
+        </Link>
+      ) : (
+        <span className="locked">{content}</span>
+      )}
+    </li>
   );
 }
 
@@ -157,9 +206,10 @@ export function PlayerPage() {
   const { t } = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
-  const { slug = '', lessonId } = useParams();
+  const { slug = '', lessonId, quizId } = useParams();
   const outline = useOutline(slug);
   const lesson = useLesson(slug, lessonId);
+  const quiz = useQuiz(slug, quizId);
   const [curriculumOpen, setCurriculumOpen] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
 
@@ -174,7 +224,7 @@ export function PlayerPage() {
 
   const data = outline.data;
   const allLessons = data.sections.flatMap((section) => section.lessons);
-  if (!lessonId) {
+  if (!lessonId && !quizId) {
     const target = data.resumeLessonId ?? allLessons.find((item) => item.accessible)?.id;
     return target ? (
       <Navigate to={`/learn/${slug}/${target}`} replace />
@@ -186,7 +236,7 @@ export function PlayerPage() {
   const locked =
     lesson.error instanceof ApiError && lesson.error.code === 'not_enrolled' ? true : false;
   const view = lesson.data;
-  const finishedCourse = data.progress?.percent === 100;
+  const lessonsFinished = allLessons.length > 0 && allLessons.every((item) => item.completed);
 
   return (
     <div className="player">
@@ -236,16 +286,32 @@ export function PlayerPage() {
             </div>
           )}
 
-          {finishedCourse && justCompleted && (
+          {data.completedAt ? (
             <div className="alert alert-success all-done" role="status">
               <PartyPopper size={20} className="ic" aria-hidden="true" />
               <div>
-                <strong>{t('player.allDoneTitle')}</strong> {t('player.allDoneBody')}
+                <strong>{t('quiz.courseDoneTitle')}</strong> {t('quiz.courseDoneBody')}
               </div>
             </div>
+          ) : (
+            lessonsFinished &&
+            justCompleted && (
+              <div className="alert alert-success all-done" role="status">
+                <PartyPopper size={20} className="ic" aria-hidden="true" />
+                <div>
+                  <strong>{t('player.allDoneTitle')}</strong> {t('player.allDoneBody')}
+                </div>
+              </div>
+            )
           )}
 
-          {lesson.isPending && <div className="skeleton" style={{ height: 360 }} />}
+          {/* A disabled query also reports "pending", so each skeleton checks its own route. */}
+          {(lessonId ? lesson.isPending : quiz.isPending) && (
+            <div className="skeleton" style={{ height: 360 }} />
+          )}
+
+          {quiz.isError && <ErrorAlert error={quiz.error} />}
+          {quiz.data && <QuizPanel key={quiz.data.id} slug={slug} quiz={quiz.data} />}
 
           {locked && (
             <div className="card locked-card">
@@ -329,7 +395,7 @@ export function PlayerPage() {
 
         <aside className={`player-aside ${curriculumOpen ? 'open' : ''}`}>
           <h3>{t('player.curriculum')}</h3>
-          <Sidebar outline={data} slug={slug} currentId={lessonId} />
+          <Sidebar outline={data} slug={slug} currentId={lessonId ?? quizId ?? ''} />
         </aside>
       </div>
     </div>
