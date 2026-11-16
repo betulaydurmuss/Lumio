@@ -92,7 +92,7 @@ export function buildApp(options: { authRateLimit?: number } = {}): TestContext 
 export async function resetDatabase(prisma: PrismaClient) {
   // TRUNCATE skips row triggers, so the append-only audit table can be cleared between tests.
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_logs, email_verifications, sessions, certificates, quiz_attempts, lesson_progress, enrollments, wishlist_items, search_terms',
+    'TRUNCATE TABLE audit_logs, email_verifications, sessions, invitations, certificates, quiz_attempts, lesson_progress, enrollments, wishlist_items, search_terms',
   );
   // Users and organizations are deleted rather than truncated with CASCADE, which
   // would follow instructors.user_id into the catalog and wipe the seeded courses.
