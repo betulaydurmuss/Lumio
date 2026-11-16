@@ -170,6 +170,41 @@ the API image is distroless and has no browser to drive. Learners can add the ce
 LinkedIn from their certificates page, and an organization admin with 2FA can revoke a certificate
 from their own organization with a reason, which is written to the audit log.
 
+## Running an organization
+
+A company admin, once 2FA is on, has four tabs: an overview of the organization in numbers,
+members, certificates and the audit log.
+
+![Managing members](docs/screenshots/admin.png)
+
+- **Invitations.** An admin invites an address as learner, instructor or admin. The link is valid
+  for seven days and works once, even if it is opened twice at the same moment; sending a new
+  invitation to the same address cancels the old one. The token travels in request bodies, never
+  in a URL, so it does not end up in access logs. Accepting the link verifies the address.
+- **Roles.** Platform admin cannot be given from here. Nobody can change their own role or
+  deactivate themselves, and the last active admin of an organization cannot be demoted or
+  deactivated, so an organization can never lock itself out.
+- **Deactivation.** A deactivated member's sessions end at once, and signing in again gets the
+  same answer as a wrong password. Reactivating restores the account as it was.
+
+Every one of these actions is in the audit log.
+
+### The platform console
+
+`/platform` is for the people who run Lumio. It is the one part of the API that reads across
+organizations on purpose, so it needs the platform admin role and 2FA, and it shows counts rather
+than people: a personal account is listed as "Personal account", because its organization is
+named after its owner. From here a course can be taken off the catalog; learners already enrolled
+keep their access, everyone else stops seeing it.
+
+The platform admin role is granted only on the server, never through the API:
+
+```sh
+npm run admin:promote -w api -- someone@example.com
+# or, with the Docker stack
+docker compose run --rm migrate npx tsx scripts/make-platform-admin.ts someone@example.com
+```
+
 ## Repository layout
 
 ```
