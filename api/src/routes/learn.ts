@@ -2,6 +2,7 @@ import {
   lessonBodySchema,
   localeSchema,
   progressUpdateSchema,
+  FINAL_EXAM_ATTEMPTS_PER_DAY,
   quizAnswersSchema,
   VIDEO_COMPLETION_RATIO,
   type CourseOutline,
@@ -16,6 +17,7 @@ import {
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { audit } from '../audit.js';
+import { issueCertificate } from '../certificates/issue.js';
 import type { PrismaClient } from '../db.js';
 import { auth, optionalAuth, requireAuth, type AuthContext } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
@@ -149,6 +151,10 @@ export function learnRouter(services: Services): Router {
   const router = Router();
   const { prisma } = services;
 
+  /** Issues the certificate on completion; idempotent, so later calls just find it. */
+  const certificateFor = (context: AuthContext, loaded: LoadedCourse, req: Request) =>
+    issueCertificate(prisma, services.certificates, context, loaded.course.id, req.ip);
+
   router.get('/:slug', optionalAuth(services), async (req, res) => {
     const locale = localeOf(req);
     const loaded = await loadCourse(prisma, slugParam.parse(req.params.slug));
@@ -195,6 +201,14 @@ export function learnRouter(services: Services): Router {
       }),
       finalQuiz: finalQuiz ? outlineQuiz(finalQuiz) : null,
       completedAt: state?.completedAt?.toISOString() ?? null,
+      certificateNo:
+        state?.completedAt && req.auth
+          ? ((
+              await req.auth.db.certificate.findFirst({
+                where: { userId: req.auth.userId, courseId: course.id },
+              })
+            )?.certNo ?? null)
+          : null,
       progress: state ? progressOf(loaded, state) : null,
       resumeLessonId: resume?.id ?? null,
     };
@@ -299,9 +313,11 @@ export function learnRouter(services: Services): Router {
 
     // A course without quizzes is finished by its last lesson.
     const { state } = await completeIfFinished(context, prisma, loaded, req);
+    const certificate = state.completedAt ? await certificateFor(context, loaded, req) : null;
     const body: ProgressResult = {
       completed: Boolean(completedAt),
       course: progressOf(loaded, state),
+      certificateNo: certificate?.certNo ?? null,
     };
     res.json(body);
   });
@@ -322,13 +338,27 @@ export function learnRouter(services: Services): Router {
       include: { questions: { orderBy: { position: 'asc' } } },
     });
     const state = await learnerState(context, loaded.course.id);
-    const locked = quiz.sectionId === null && !allLessonsDone(loaded, state);
-    return { context, loaded, quiz, locked };
+    const isFinal = quiz.sectionId === null;
+    const locked = isFinal && !allLessonsDone(loaded, state);
+
+    // The final exam leads to a certificate, so attempts are rationed until it is passed.
+    let attemptsLeft: number | null = null;
+    if (isFinal && !state.passedQuizzes.has(quiz.id)) {
+      const recent = await context.db.quizAttempt.count({
+        where: {
+          userId: context.userId,
+          quizId: quiz.id,
+          createdAt: { gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      });
+      attemptsLeft = Math.max(0, FINAL_EXAM_ATTEMPTS_PER_DAY - recent);
+    }
+    return { context, loaded, quiz, locked, attemptsLeft };
   }
 
   router.get('/:slug/quizzes/:quizId', requireAuth(services), async (req, res) => {
     const locale = localeOf(req);
-    const { context, quiz, locked } = await quizFor(req);
+    const { context, quiz, locked, attemptsLeft } = await quizFor(req);
     const attempts = await context.db.quizAttempt.findMany({
       where: { userId: context.userId, quizId: quiz.id },
       orderBy: { createdAt: 'desc' },
@@ -348,6 +378,7 @@ export function learnRouter(services: Services): Router {
             options: pick(locale, question.optionsTr, question.optionsEn),
           })),
       locked,
+      attemptsLeft,
       attempts: attempts.map((attempt) => ({
         score: attempt.score,
         passed: attempt.passed,
@@ -360,8 +391,11 @@ export function learnRouter(services: Services): Router {
   router.post('/:slug/quizzes/:quizId/attempts', requireAuth(services), async (req, res) => {
     const locale = localeOf(req);
     const { answers } = quizAnswersSchema.parse(req.body);
-    const { context, loaded, quiz, locked } = await quizFor(req);
+    const { context, loaded, quiz, locked, attemptsLeft } = await quizFor(req);
     if (locked) throw new HttpError(409, 'quiz_locked', 'Finish every lesson first');
+    if (attemptsLeft === 0) {
+      throw new HttpError(429, 'attempt_limit', 'No attempts left today; try again tomorrow');
+    }
     if (answers.length !== quiz.questions.length) {
       throw new HttpError(400, 'invalid_input', 'Answer every question');
     }
@@ -385,6 +419,7 @@ export function learnRouter(services: Services): Router {
     });
 
     const { state, newlyCompleted } = await completeIfFinished(context, prisma, loaded, req);
+    const certificate = state.completedAt ? await certificateFor(context, loaded, req) : null;
     const reveal = passed || quiz.sectionId !== null;
     const body: QuizResult = {
       score,
@@ -393,12 +428,13 @@ export function learnRouter(services: Services): Router {
       results: quiz.questions.map((question, index) => ({
         questionId: question.id,
         chosen: answers[index] ?? -1,
-        correct: correct[index] ?? false,
+        correct: reveal ? (correct[index] ?? false) : null,
         correctIndex: reveal ? question.correctIndex : null,
         explanation: reveal ? pick(locale, question.explanationTr, question.explanationEn) : null,
       })),
       course: progressOf(loaded, state),
       courseCompleted: newlyCompleted,
+      certificateNo: certificate?.certNo ?? null,
     };
     res.status(201).json(body);
   });

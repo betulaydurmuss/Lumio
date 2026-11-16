@@ -12,7 +12,9 @@ export type AuditAction =
   | 'session.revoked'
   | 'totp.enabled'
   | 'course.enrolled'
-  | 'course.completed';
+  | 'course.completed'
+  | 'certificate.issued'
+  | 'certificate.revoked';
 
 export interface AuditEntry {
   orgId: string | null;
