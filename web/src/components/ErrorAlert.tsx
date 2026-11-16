@@ -20,6 +20,9 @@ const KNOWN = new Set([
   'not_enrolled',
   'not_watched',
   'quiz_locked',
+  'invalid_link',
+  'invalid_certificate',
+  'attempt_limit',
 ]);
 
 export function errorKey(error: unknown): string {

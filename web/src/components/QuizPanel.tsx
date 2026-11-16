@@ -2,6 +2,7 @@ import type { QuizResult, QuizView } from '@lumio/shared';
 import { CircleCheck, CircleX, ClipboardCheck, Lock, RotateCcw } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { useLocale } from '../api/catalog.js';
 import { useSubmitQuiz } from '../api/learn.js';
 import { ErrorAlert } from './ErrorAlert.js';
@@ -18,7 +19,8 @@ function QuizResultView({
   onRetry: () => void;
 }) {
   const { t } = useTranslation();
-  const hidden = result.results.some((item) => item.correctIndex === null);
+  // A failed final exam comes back without per-question results.
+  const hidden = result.results.some((item) => item.correct === null);
 
   return (
     <div className="quiz-result">
@@ -32,12 +34,18 @@ function QuizResultView({
           <strong>{result.passed ? t('quiz.passedTitle') : t('quiz.failedTitle')}</strong>
           <span className="mono">{t('quiz.score', { score: result.score })}</span>
           {!result.passed && <p>{t('quiz.failedBody', { percent: result.passPercent })}</p>}
+          {result.certificateNo && (
+            <p>
+              {t('certificates.ready')}{' '}
+              <Link to="/certificates">{t('certificates.viewCertificate')}</Link>
+            </p>
+          )}
         </div>
       </div>
 
       {hidden && <p className="hint">{t('quiz.finalHidden')}</p>}
 
-      <ol className="quiz-review">
+      <ol className="quiz-review" hidden={hidden}>
         {quiz.questions.map((question, index) => {
           const item = result.results[index];
           if (!item) return null;
@@ -177,14 +185,25 @@ export function QuizPanel({ slug, quiz }: { slug: string; quiz: QuizView }) {
 
         {submit.error && <ErrorAlert error={submit.error} />}
 
+        {quiz.attemptsLeft === 0 && (
+          <div className="alert alert-warn" role="status">
+            <div>{t('quiz.noAttempts')}</div>
+          </div>
+        )}
+
         <div className="quiz-submit">
           <span className="hint" aria-live="polite">
             {t('quiz.answered', { answered, total: quiz.questions.length })}
+            {quiz.attemptsLeft !== null && quiz.attemptsLeft > 0 && (
+              <> · {t('quiz.attemptsLeft', { count: quiz.attemptsLeft })}</>
+            )}
           </span>
           <button
             type="submit"
             className="btn btn-accent btn-lg"
-            disabled={answered !== quiz.questions.length || submit.isPending}
+            disabled={
+              answered !== quiz.questions.length || submit.isPending || quiz.attemptsLeft === 0
+            }
           >
             {submit.isPending ? t('common.loading') : t('quiz.submit')}
           </button>

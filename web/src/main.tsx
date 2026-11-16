@@ -14,6 +14,7 @@ import './styles/layout.css';
 import './styles/pages.css';
 import './styles/catalog.css';
 import './styles/player.css';
+import './styles/certificates.css';
 import './i18n/index.js';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ import { RequireAuth } from './components/RequireAuth.js';
 import { AccountPage } from './pages/AccountPage.js';
 import { AdminPage } from './pages/AdminPage.js';
 import { CatalogPage } from './pages/CatalogPage.js';
+import { CertificatesPage } from './pages/CertificatesPage.js';
 import { CoursePage } from './pages/CoursePage.js';
 import { CheckEmailPage, VerifyEmailPage } from './pages/EmailPages.js';
 import { HomePage } from './pages/HomePage.js';
@@ -32,6 +34,7 @@ import { NotFoundPage } from './pages/NotFoundPage.js';
 import { PlayerPage } from './pages/PlayerPage.js';
 import { SignInPage } from './pages/SignInPage.js';
 import { SignUpPage } from './pages/SignUpPage.js';
+import { VerifyPage } from './pages/VerifyPage.js';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -48,6 +51,9 @@ const router = createBrowserRouter([
       { path: 'learn/:slug', element: <PlayerPage /> },
       { path: 'learn/:slug/:lessonId', element: <PlayerPage /> },
       { path: 'learn/:slug/quiz/:quizId', element: <PlayerPage /> },
+      // Public: anyone holding a certificate can be checked here.
+      { path: 'dogrula', element: <VerifyPage /> },
+      { path: 'dogrula/:certNo', element: <VerifyPage /> },
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'sign-up', element: <SignUpPage /> },
       { path: 'check-email', element: <CheckEmailPage /> },
@@ -57,6 +63,7 @@ const router = createBrowserRouter([
         children: [
           { path: 'account', element: <AccountPage /> },
           { path: 'admin', element: <AdminPage /> },
+          { path: 'certificates', element: <CertificatesPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

@@ -290,7 +290,11 @@ export function PlayerPage() {
             <div className="alert alert-success all-done" role="status">
               <PartyPopper size={20} className="ic" aria-hidden="true" />
               <div>
-                <strong>{t('quiz.courseDoneTitle')}</strong> {t('quiz.courseDoneBody')}
+                <strong>{t('quiz.courseDoneTitle')}</strong>{' '}
+                {data.certificateNo ? t('certificates.ready') : t('quiz.courseDoneBody')}{' '}
+                {data.certificateNo && (
+                  <Link to="/certificates">{t('certificates.viewCertificate')}</Link>
+                )}
               </div>
             </div>
           ) : (

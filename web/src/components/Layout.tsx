@@ -56,6 +56,7 @@ function AccountNav() {
       {rolesRequiringTwoFactor.includes(me.data.role) && (
         <NavLink to="/admin">{t('nav.admin')}</NavLink>
       )}
+      <NavLink to="/certificates">{t('nav.certificates')}</NavLink>
       <NavLink to="/account">{t('nav.account')}</NavLink>
       <button type="button" className="btn btn-secondary btn-sm" onClick={() => void signOut()}>
         {t('nav.signOut')}
@@ -87,7 +88,8 @@ export function Layout() {
       <footer className="site-footer">
         <div className="wrap">
           <span>
-            {t('footer.rights', { year: new Date().getFullYear() })} · {t('footer.tagline')}
+            {t('footer.rights', { year: new Date().getFullYear() })} · {t('footer.tagline')} ·{' '}
+            <Link to="/dogrula">{t('nav.verify')}</Link>
           </span>
           <StatusLine />
         </div>
