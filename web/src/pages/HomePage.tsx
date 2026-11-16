@@ -27,7 +27,16 @@ function ContinueRail() {
         <h3 className="section-title">{t('homeRails.continue')}</h3>
         <div className="catalog-grid">
           {learning.data.slice(0, 4).map((item) => (
-            <CourseCard key={item.course.slug} course={item.course} enrolled />
+            <CourseCard
+              key={item.course.slug}
+              course={item.course}
+              learning={{
+                percent: item.progress.percent,
+                href: item.resumeLessonId
+                  ? `/learn/${item.course.slug}/${item.resumeLessonId}`
+                  : `/learn/${item.course.slug}`,
+              }}
+            />
           ))}
         </div>
       </div>

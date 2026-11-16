@@ -62,12 +62,18 @@ export function PriceTag({ course }: { course: Pick<Course, 'price'> }) {
 }
 
 /** The course card from the design system: cover, title, instructor, facts, then price. */
-export function CourseCard({ course, enrolled = false }: { course: Course; enrolled?: boolean }) {
+interface CourseCardProps {
+  course: Course;
+  /** For the learner's own courses: shows progress instead of the price and opens the player. */
+  learning?: { percent: number; href: string };
+}
+
+export function CourseCard({ course, learning }: CourseCardProps) {
   const { t } = useTranslation();
   const locale = useLocale();
   return (
     <article className="course">
-      <Link to={`/courses/${course.slug}`} className="course-link">
+      <Link to={learning?.href ?? `/courses/${course.slug}`} className="course-link">
         <CoverArt course={course} />
         <div className="body">
           <h3 className="title">{course.title}</h3>
@@ -87,8 +93,23 @@ export function CourseCard({ course, enrolled = false }: { course: Course; enrol
             </span>
             <Rating course={course} />
           </div>
+          {learning && (
+            <div className="card-progress">
+              <div
+                className="progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={learning.percent}
+                aria-label={t('card.progress', { percent: learning.percent })}
+              >
+                <i style={{ width: `${learning.percent}%` }} />
+              </div>
+              <span className="hint">{t('card.progress', { percent: learning.percent })}</span>
+            </div>
+          )}
           <div className="foot">
-            {enrolled ? (
+            {learning ? (
               <span className="badge badge-pop">{t('card.enrolled')}</span>
             ) : (
               <PriceTag course={course} />

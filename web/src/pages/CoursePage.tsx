@@ -92,12 +92,22 @@ function Curriculum({ course }: { course: CourseDetail }) {
                   return (
                     <li key={lesson.id}>
                       <Icon size={16} aria-label={t(`course.lessonTypes.${lesson.type}`)} />
-                      <span className="lesson-title">{lesson.title}</span>
+                      {course.viewer?.enrolled || lesson.isPreview ? (
+                        <Link className="lesson-title" to={`/learn/${course.slug}/${lesson.id}`}>
+                          {lesson.title}
+                        </Link>
+                      ) : (
+                        <span className="lesson-title">{lesson.title}</span>
+                      )}
                       {lesson.isPreview && (
-                        <span className="badge badge-new">
+                        <Link
+                          className="badge badge-new"
+                          to={`/learn/${course.slug}/${lesson.id}`}
+                          aria-label={`${t('course.preview')}: ${lesson.title}`}
+                        >
                           <Eye size={12} aria-hidden="true" />
                           {t('course.preview')}
-                        </span>
+                        </Link>
                       )}
                       <span className="mono lesson-time">
                         {formatDuration(lesson.durationMinutes, locale)}
@@ -137,12 +147,15 @@ function PurchaseCard({ course }: { course: CourseDetail }) {
         {wishlist.error && <ErrorAlert error={wishlist.error} />}
 
         {course.viewer?.enrolled ? (
-          <div className="alert alert-success" role="status">
-            <CircleCheck size={18} className="ic" aria-hidden="true" />
-            <div>
-              {t('course.enrolledNote')} <Link to="/">{t('course.goHome')}</Link>
-            </div>
-          </div>
+          <>
+            <Link to={`/learn/${course.slug}`} className="btn btn-accent btn-lg btn-block">
+              <PlayCircle size={18} aria-hidden="true" />
+              {t('course.continueCourse')}
+            </Link>
+            <p className="hint enrolled-note">
+              <CircleCheck size={14} aria-hidden="true" /> {t('card.enrolled')}
+            </p>
+          </>
         ) : !signedIn ? (
           <Link
             to="/sign-in"
