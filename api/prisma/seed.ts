@@ -1,6 +1,17 @@
-import { normalizeSearch } from '@lumio/shared';
+import { lessonBodySchema, normalizeSearch } from '@lumio/shared';
 import { createPrisma, type PrismaClient } from '../src/db.js';
+import { Prisma } from '../src/generated/prisma/client.js';
 import { categories, courses, instructors, type CategorySeed } from './seed/catalog-data.js';
+import { lessonContent } from './seed/lesson-content.js';
+
+// Every video lesson plays the same short demo clip until real lessons are recorded.
+const DEMO_VIDEO = {
+  videoKey: 'demo/lesson.mp4',
+  captionsTrKey: 'demo/captions.tr.vtt',
+  captionsEnKey: 'demo/captions.en.vtt',
+  videoSeconds: 30,
+};
+const NO_VIDEO = { videoKey: null, captionsTrKey: null, captionsEnKey: null, videoSeconds: null };
 
 /**
  * Loads the demo catalog. Safe to run repeatedly: rows are matched by slug and
@@ -89,36 +100,47 @@ export async function seedCatalog(prisma: PrismaClient) {
       publishedAt: new Date(Date.now() - seed.publishedDaysAgo * 86_400_000),
     };
 
-    const existing = await prisma.course.findUnique({ where: { slug: seed.slug } });
-    if (existing) {
-      // Keep real enrollments counted on top of the demo figure.
-      await prisma.course.update({ where: { id: existing.id }, data });
-      continue;
-    }
-    await prisma.course.create({
-      data: {
-        slug: seed.slug,
-        ...data,
-        enrollmentCount: seed.enrollments,
-        sections: {
-          create: seed.sections.map((section, sectionIndex) => ({
-            position: sectionIndex,
-            titleTr: section.tr,
-            titleEn: section.en,
-            lessons: {
-              create: section.lessons.map(([type, tr, en, minutes, preview], lessonIndex) => ({
-                position: lessonIndex,
-                type,
-                titleTr: tr,
-                titleEn: en,
-                durationMinutes: minutes,
-                isPreview: preview ?? false,
-              })),
-            },
-          })),
-        },
-      },
+    // Real enrollments are counted on top of the demo figure, so an update leaves the count alone.
+    const course = await prisma.course.upsert({
+      where: { slug: seed.slug },
+      create: { slug: seed.slug, ...data, enrollmentCount: seed.enrollments },
+      update: data,
     });
+
+    // Sections and lessons are matched by position, so learner progress keeps
+    // pointing at the same lesson rows when the seed runs again.
+    for (const [sectionIndex, section] of seed.sections.entries()) {
+      const sectionRow = await prisma.section.upsert({
+        where: { courseId_position: { courseId: course.id, position: sectionIndex } },
+        create: {
+          courseId: course.id,
+          position: sectionIndex,
+          titleTr: section.tr,
+          titleEn: section.en,
+        },
+        update: { titleTr: section.tr, titleEn: section.en },
+      });
+
+      for (const [lessonIndex, [type, tr, en, minutes, preview]] of section.lessons.entries()) {
+        const written = lessonContent[seed.slug]?.[en];
+        const lesson = {
+          type,
+          titleTr: tr,
+          titleEn: en,
+          durationMinutes: minutes,
+          isPreview: preview ?? false,
+          // Validated here so a typo in the content fails the seed, not the player.
+          bodyTr: written ? lessonBodySchema.parse(written.tr) : Prisma.DbNull,
+          bodyEn: written ? lessonBodySchema.parse(written.en) : Prisma.DbNull,
+          ...(type === 'video' ? DEMO_VIDEO : NO_VIDEO),
+        };
+        await prisma.lesson.upsert({
+          where: { sectionId_position: { sectionId: sectionRow.id, position: lessonIndex } },
+          create: { sectionId: sectionRow.id, position: lessonIndex, ...lesson },
+          update: lesson,
+        });
+      }
+    }
   }
 
   return { categories: categoryIds.size, instructors: instructorIds.size, courses: courses.length };
