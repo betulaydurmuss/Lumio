@@ -64,10 +64,31 @@ export const courseProgressSchema = z.object({
 });
 export type CourseProgress = z.infer<typeof courseProgressSchema>;
 
+export const outlineQuizSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  questionCount: z.number().int(),
+  passed: z.boolean(),
+  bestScore: z.number().int().nullable(),
+  /** The final exam stays locked until every lesson is complete. */
+  locked: z.boolean(),
+  accessible: z.boolean(),
+});
+export type OutlineQuiz = z.infer<typeof outlineQuizSchema>;
+
 export const courseOutlineSchema = z.object({
   course: z.object({ slug: z.string(), title: z.string() }),
   enrolled: z.boolean(),
-  sections: z.object({ title: z.string(), lessons: outlineLessonSchema.array() }).array(),
+  sections: z
+    .object({
+      title: z.string(),
+      lessons: outlineLessonSchema.array(),
+      quiz: outlineQuizSchema.nullable(),
+    })
+    .array(),
+  finalQuiz: outlineQuizSchema.nullable(),
+  /** Set once every lesson is done and every quiz passed. */
+  completedAt: z.string().nullable(),
   progress: courseProgressSchema.nullable(),
   /** Where "continue" should land: the first lesson not yet completed. */
   resumeLessonId: z.string().nullable(),
@@ -109,3 +130,47 @@ export const progressResultSchema = z.object({
   course: courseProgressSchema,
 });
 export type ProgressResult = z.infer<typeof progressResultSchema>;
+
+// ---- Quizzes ------------------------------------------------------------------
+
+/** What the learner sees before answering. There is deliberately no correct answer here. */
+export const quizViewSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: z.enum(['section', 'final']),
+  passPercent: z.number().int(),
+  questions: z.object({ id: z.string(), prompt: z.string(), options: z.string().array() }).array(),
+  locked: z.boolean(),
+  attempts: z
+    .object({ score: z.number().int(), passed: z.boolean(), createdAt: z.string() })
+    .array(),
+});
+export type QuizView = z.infer<typeof quizViewSchema>;
+
+export const quizAnswersSchema = z.object({
+  answers: z.number().int().min(0).max(9).array().min(1).max(50),
+});
+export type QuizAnswers = z.infer<typeof quizAnswersSchema>;
+
+export const quizResultSchema = z.object({
+  score: z.number().int(),
+  passed: z.boolean(),
+  passPercent: z.number().int(),
+  results: z
+    .object({
+      questionId: z.string(),
+      chosen: z.number().int(),
+      correct: z.boolean(),
+      /**
+       * Hidden when a final exam is failed, so a retake cannot be passed by
+       * copying answers. Section quizzes always explain, to help learning.
+       */
+      correctIndex: z.number().int().nullable(),
+      explanation: z.string().nullable(),
+    })
+    .array(),
+  course: courseProgressSchema,
+  /** True on the attempt that completed the whole course. */
+  courseCompleted: z.boolean(),
+});
+export type QuizResult = z.infer<typeof quizResultSchema>;
