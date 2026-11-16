@@ -40,6 +40,8 @@ async function resolveAuth(services: Services, req: Request): Promise<AuthContex
       orgId: token.orgId,
       revokedAt: null,
       expiresAt: { gt: new Date() },
+      // A deactivated member is signed out on their very next request.
+      user: { disabledAt: null },
     },
     select: { mfaVerified: true, user: { select: { role: true } } },
   });
