@@ -3,7 +3,11 @@
     "catalog": "Kurslar",
     "business": "Kurumlar için",
     "signIn": "Giriş yap",
-    "language": "Dil"
+    "language": "Dil",
+    "account": "Hesabım",
+    "admin": "Yönetim",
+    "signOut": "Çıkış yap",
+    "signUp": "Kaydol"
   },
   "home": {
     "pill": "Web · Siber güvenlik · KVKK",
@@ -40,5 +44,117 @@
   "footer": {
     "rights": "© {{year}} Lumio",
     "tagline": "Web, siber güvenlik ve uyum eğitimi"
+  },
+  "common": {
+    "loading": "Yükleniyor…",
+    "retry": "Tekrar dene",
+    "back": "Geri"
+  },
+  "errors": {
+    "invalid_credentials": "E-posta ya da şifre hatalı, veya hesap geçici olarak kilitli. Birkaç başarısız denemeden sonra hesap 15 dakika kilitlenir.",
+    "email_not_verified": "Giriş yapmadan önce e-posta adresini doğrulaman gerekiyor. Gelen kutunu kontrol et.",
+    "disposable_email": "Geçici e-posta adresleri kabul edilmiyor. Kalıcı bir adres kullan.",
+    "invalid_token": "Bu bağlantı geçersiz ya da süresi dolmuş.",
+    "invalid_code": "Kod geçerli değil. Uygulamadaki güncel kodu gir.",
+    "challenge_expired": "Doğrulama süresi doldu. Yeniden giriş yap.",
+    "rate_limited": "Çok fazla deneme yapıldı. Biraz bekleyip tekrar dene.",
+    "csrf_failed": "Oturum doğrulanamadı. Sayfayı yenileyip tekrar dene.",
+    "mfa_required": "Yönetim alanına girmek için iki adımlı doğrulamayı açman gerekiyor.",
+    "forbidden": "Bu sayfayı görmeye yetkin yok.",
+    "invalid_input": "Bazı alanlar geçersiz. Kontrol edip tekrar dene.",
+    "totp_already_enabled": "İki adımlı doğrulama zaten açık.",
+    "unknown": "Bir şeyler ters gitti. Lütfen tekrar dene."
+  },
+  "signIn": {
+    "title": "Giriş yap",
+    "lead": "Lumio hesabınla devam et.",
+    "email": "E-posta",
+    "password": "Şifre",
+    "submit": "Giriş yap",
+    "noAccount": "Hesabın yok mu?",
+    "signUp": "Kaydol",
+    "totpTitle": "İki adımlı doğrulama",
+    "totpLead": "Doğrulama uygulamandaki 6 haneli kodu gir.",
+    "code": "Doğrulama kodu",
+    "verify": "Doğrula"
+  },
+  "signUp": {
+    "title": "Hesap oluştur",
+    "lead": "Bireysel öğrenmek ya da ekibini eğitmek için başla.",
+    "accountType": "Hesap türü",
+    "personal": "Bireysel",
+    "company": "Kurum",
+    "organization": "Kurum adı",
+    "name": "Ad soyad",
+    "email": "E-posta",
+    "password": "Şifre",
+    "passwordHint": "En az 12 karakter. Uzun bir cümle hem hatırlaması kolay hem de güçlüdür.",
+    "submit": "Hesap oluştur",
+    "haveAccount": "Zaten hesabın var mı?",
+    "signIn": "Giriş yap",
+    "companyNote": "Kurum hesabını açan kişi kurumun yöneticisi olur ve iki adımlı doğrulamayı açması gerekir."
+  },
+  "checkEmail": {
+    "title": "E-postanı kontrol et",
+    "body": "{{email}} adresine bir doğrulama bağlantısı gönderdik. Bağlantı 24 saat geçerli.",
+    "note": "E-posta gelmediyse istenmeyen klasörüne bak."
+  },
+  "verify": {
+    "checking": "E-posta adresin doğrulanıyor…",
+    "done": "E-posta adresin doğrulandı",
+    "doneBody": "Artık giriş yapabilirsin.",
+    "failed": "Doğrulama başarısız",
+    "signIn": "Giriş yap"
+  },
+  "account": {
+    "title": "Hesabım",
+    "organization": "Kurum",
+    "role": "Rol",
+    "roles": {
+      "learner": "Öğrenci",
+      "instructor": "Eğitmen",
+      "org_admin": "Kurum yöneticisi",
+      "platform_admin": "Platform yöneticisi"
+    },
+    "security": "Güvenlik",
+    "twoFactor": "İki adımlı doğrulama",
+    "twoFactorOn": "Açık",
+    "twoFactorOff": "Kapalı",
+    "twoFactorRequired": "Rolün gereği iki adımlı doğrulamayı açman gerekiyor.",
+    "setup": "İki adımlı doğrulamayı aç",
+    "setupStep1": "Doğrulama uygulamanla (Google Authenticator, Microsoft Authenticator, 1Password…) bu karekodu okut.",
+    "qrAlt": "İki adımlı doğrulama karekodu",
+    "manual": "Karekodu okutamıyorsan bu anahtarı elle gir:",
+    "setupStep2": "Uygulamanın gösterdiği 6 haneli kodu gir.",
+    "enable": "Etkinleştir",
+    "enabled": "İki adımlı doğrulama açıldı. Diğer cihazlardaki oturumların kapatıldı.",
+    "sessions": "Açık oturumlar",
+    "sessionsLead": "Tanımadığın bir oturumu hemen kapatabilirsin.",
+    "current": "Bu cihaz",
+    "lastUsed": "Son kullanım",
+    "started": "Başlangıç",
+    "revoke": "Oturumu kapat",
+    "noSessions": "Açık oturum yok.",
+    "unknownDevice": "Bilinmeyen cihaz"
+  },
+  "admin": {
+    "title": "Kurum yönetimi",
+    "members": "Üyeler",
+    "name": "Ad",
+    "email": "E-posta",
+    "role": "Rol",
+    "verified": "Doğrulandı",
+    "twoFactor": "2FA",
+    "joined": "Katılım",
+    "yes": "Evet",
+    "no": "Hayır",
+    "noMembers": "Henüz üye yok.",
+    "audit": "Denetim kaydı",
+    "auditLead": "Kurumundaki son 100 kritik işlem. Kayıtlar değiştirilemez ve silinemez.",
+    "action": "İşlem",
+    "when": "Zaman",
+    "ip": "IP",
+    "noAudit": "Henüz kayıt yok.",
+    "setup2fa": "İki adımlı doğrulamayı aç"
   }
 }

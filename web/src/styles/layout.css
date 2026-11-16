@@ -166,7 +166,7 @@ main {
   h1 {
     font-size: 30px;
   }
-  .topbar nav a {
+  .topbar nav a:not(.btn) {
     display: none;
   }
 }

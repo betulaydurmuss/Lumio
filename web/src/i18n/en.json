@@ -3,7 +3,11 @@
     "catalog": "Courses",
     "business": "For teams",
     "signIn": "Sign in",
-    "language": "Language"
+    "language": "Language",
+    "account": "My account",
+    "admin": "Admin",
+    "signOut": "Sign out",
+    "signUp": "Sign up"
   },
   "home": {
     "pill": "Web · Cybersecurity · KVKK",
@@ -40,5 +44,117 @@
   "footer": {
     "rights": "© {{year}} Lumio",
     "tagline": "Web, cybersecurity and compliance training"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "back": "Back"
+  },
+  "errors": {
+    "invalid_credentials": "The email or password is wrong, or the account is temporarily locked. After several failed attempts the account locks for 15 minutes.",
+    "email_not_verified": "Verify your email address before signing in. Check your inbox.",
+    "disposable_email": "Temporary email addresses are not accepted. Use a permanent address.",
+    "invalid_token": "This link is invalid or has expired.",
+    "invalid_code": "The code is not valid. Enter the current code from your app.",
+    "challenge_expired": "The verification step timed out. Sign in again.",
+    "rate_limited": "Too many attempts. Wait a little and try again.",
+    "csrf_failed": "Your session could not be confirmed. Reload the page and try again.",
+    "mfa_required": "Turn on two-factor authentication to enter the admin area.",
+    "forbidden": "You do not have access to this page.",
+    "invalid_input": "Some fields are not valid. Check them and try again.",
+    "totp_already_enabled": "Two-factor authentication is already on.",
+    "unknown": "Something went wrong. Please try again."
+  },
+  "signIn": {
+    "title": "Sign in",
+    "lead": "Continue with your Lumio account.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "noAccount": "No account yet?",
+    "signUp": "Sign up",
+    "totpTitle": "Two-factor authentication",
+    "totpLead": "Enter the 6-digit code from your authenticator app.",
+    "code": "Verification code",
+    "verify": "Verify"
+  },
+  "signUp": {
+    "title": "Create an account",
+    "lead": "Start learning on your own or train your team.",
+    "accountType": "Account type",
+    "personal": "Personal",
+    "company": "Company",
+    "organization": "Company name",
+    "name": "Full name",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 12 characters. A long sentence is easy to remember and hard to guess.",
+    "submit": "Create account",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "companyNote": "Whoever opens a company account becomes its admin and must turn on two-factor authentication."
+  },
+  "checkEmail": {
+    "title": "Check your email",
+    "body": "We sent a verification link to {{email}}. The link is valid for 24 hours.",
+    "note": "If it does not arrive, look in your spam folder."
+  },
+  "verify": {
+    "checking": "Verifying your email address…",
+    "done": "Your email address is verified",
+    "doneBody": "You can sign in now.",
+    "failed": "Verification failed",
+    "signIn": "Sign in"
+  },
+  "account": {
+    "title": "My account",
+    "organization": "Organization",
+    "role": "Role",
+    "roles": {
+      "learner": "Learner",
+      "instructor": "Instructor",
+      "org_admin": "Organization admin",
+      "platform_admin": "Platform admin"
+    },
+    "security": "Security",
+    "twoFactor": "Two-factor authentication",
+    "twoFactorOn": "On",
+    "twoFactorOff": "Off",
+    "twoFactorRequired": "Your role requires two-factor authentication.",
+    "setup": "Turn on two-factor authentication",
+    "setupStep1": "Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…).",
+    "qrAlt": "Two-factor authentication QR code",
+    "manual": "If you cannot scan it, enter this key by hand:",
+    "setupStep2": "Enter the 6-digit code your app shows.",
+    "enable": "Turn on",
+    "enabled": "Two-factor authentication is on. Your sessions on other devices were signed out.",
+    "sessions": "Active sessions",
+    "sessionsLead": "Sign out any session you do not recognise straight away.",
+    "current": "This device",
+    "lastUsed": "Last used",
+    "started": "Started",
+    "revoke": "Sign out",
+    "noSessions": "No active sessions.",
+    "unknownDevice": "Unknown device"
+  },
+  "admin": {
+    "title": "Organization admin",
+    "members": "Members",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "verified": "Verified",
+    "twoFactor": "2FA",
+    "joined": "Joined",
+    "yes": "Yes",
+    "no": "No",
+    "noMembers": "No members yet.",
+    "audit": "Audit log",
+    "auditLead": "The last 100 critical actions in your organization. Entries cannot be changed or deleted.",
+    "action": "Action",
+    "when": "When",
+    "ip": "IP",
+    "noAudit": "No entries yet.",
+    "setup2fa": "Turn on two-factor authentication"
   }
 }
