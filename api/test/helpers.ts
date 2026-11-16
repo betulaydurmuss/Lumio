@@ -1,11 +1,14 @@
 import type { MailJob } from '@lumio/shared';
 import type { Express } from 'express';
+import { fileURLToPath } from 'node:url';
 import { generate } from 'otplib';
 import request from 'supertest';
 import { expect } from 'vitest';
 import { createApp } from '../src/app.js';
 import { createPrisma, type PrismaClient } from '../src/db.js';
 import { createLogger } from '../src/logger.js';
+import { MediaSigner } from '../src/media/signer.js';
+import { LocalMediaStore } from '../src/media/store.js';
 import { TokenService } from '../src/security/tokens.js';
 import type { Services } from '../src/services.js';
 import { testDatabaseUrl } from './setup/database.js';
@@ -61,6 +64,10 @@ export function buildServices(prisma: PrismaClient, mailer: FakeMailer, replay: 
     encryptionKey: Buffer.alloc(32, 7),
     webOrigin: 'http://localhost:5174',
     secureCookies: false,
+    media: {
+      store: new LocalMediaStore(fileURLToPath(new URL('../media', import.meta.url))),
+      signer: new MediaSigner('m'.repeat(40)),
+    },
   };
   return services;
 }
@@ -83,7 +90,7 @@ export function buildApp(options: { authRateLimit?: number } = {}): TestContext 
 export async function resetDatabase(prisma: PrismaClient) {
   // TRUNCATE skips row triggers, so the append-only audit table can be cleared between tests.
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_logs, email_verifications, sessions, enrollments, wishlist_items, search_terms',
+    'TRUNCATE TABLE audit_logs, email_verifications, sessions, lesson_progress, enrollments, wishlist_items, search_terms',
   );
   // Users and organizations are deleted rather than truncated with CASCADE, which
   // would follow instructors.user_id into the catalog and wipe the seeded courses.
