@@ -3,7 +3,8 @@ import { Redis } from 'ioredis';
 import nodemailer from 'nodemailer';
 import { pino } from 'pino';
 import { loadConfig } from './config.js';
-import { MAIL_QUEUE, sendMail } from './mail.js';
+import { MAIL_QUEUE } from '@lumio/shared';
+import { sendMail } from './mail.js';
 
 const config = loadConfig();
 const logger = pino({ level: config.LOG_LEVEL });
