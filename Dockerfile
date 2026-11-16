@@ -50,7 +50,7 @@ COPY --from=prod-deps /app/worker/dist ./worker/dist
 CMD ["worker/dist/main.js"]
 
 # ---- web: static files behind nginx, which also proxies /api ----
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS web
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS web
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/web/dist /usr/share/nginx/html
 EXPOSE 8080
