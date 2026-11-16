@@ -89,6 +89,7 @@ export const courseOutlineSchema = z.object({
   finalQuiz: outlineQuizSchema.nullable(),
   /** Set once every lesson is done and every quiz passed. */
   completedAt: z.string().nullable(),
+  certificateNo: z.string().nullable(),
   progress: courseProgressSchema.nullable(),
   /** Where "continue" should land: the first lesson not yet completed. */
   resumeLessonId: z.string().nullable(),
@@ -128,12 +129,16 @@ export type ProgressUpdate = z.infer<typeof progressUpdateSchema>;
 export const progressResultSchema = z.object({
   completed: z.boolean(),
   course: courseProgressSchema,
+  certificateNo: z.string().nullable(),
 });
 export type ProgressResult = z.infer<typeof progressResultSchema>;
 
 // ---- Quizzes ------------------------------------------------------------------
 
 /** What the learner sees before answering. There is deliberately no correct answer here. */
+/** Final exam attempts allowed in any 24 hours, until it is passed. */
+export const FINAL_EXAM_ATTEMPTS_PER_DAY = 3;
+
 export const quizViewSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -141,6 +146,8 @@ export const quizViewSchema = z.object({
   passPercent: z.number().int(),
   questions: z.object({ id: z.string(), prompt: z.string(), options: z.string().array() }).array(),
   locked: z.boolean(),
+  /** For a final exam: attempts left in the current 24 hours. Null when unlimited. */
+  attemptsLeft: z.number().int().nullable(),
   attempts: z
     .object({ score: z.number().int(), passed: z.boolean(), createdAt: z.string() })
     .array(),
@@ -160,11 +167,12 @@ export const quizResultSchema = z.object({
     .object({
       questionId: z.string(),
       chosen: z.number().int(),
-      correct: z.boolean(),
       /**
-       * Hidden when a final exam is failed, so a retake cannot be passed by
-       * copying answers. Section quizzes always explain, to help learning.
+       * All three are hidden when a final exam is failed: showing which questions
+       * were right would let the exam be passed by trying options one by one.
+       * Section quizzes always explain, to help learning.
        */
+      correct: z.boolean().nullable(),
       correctIndex: z.number().int().nullable(),
       explanation: z.string().nullable(),
     })
@@ -172,5 +180,7 @@ export const quizResultSchema = z.object({
   course: courseProgressSchema,
   /** True on the attempt that completed the whole course. */
   courseCompleted: z.boolean(),
+  /** The certificate issued for the course, once it is complete and offers one. */
+  certificateNo: z.string().nullable(),
 });
 export type QuizResult = z.infer<typeof quizResultSchema>;
