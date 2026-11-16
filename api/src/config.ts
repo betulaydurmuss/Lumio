@@ -1,10 +1,17 @@
 import { z } from 'zod';
 
+const secret = (name: string) => z.string().min(32, `${name} must be at least 32 characters`);
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_PORT: z.coerce.number().int().positive().default(4001),
   WEB_ORIGIN: z.url(),
-  COOKIE_SECRET: z.string().min(32, 'COOKIE_SECRET must be at least 32 characters'),
+  COOKIE_SECRET: secret('COOKIE_SECRET'),
+  ACCESS_TOKEN_SECRET: secret('ACCESS_TOKEN_SECRET'),
+  /** 32 bytes, base64. Encrypts secrets stored in the database, such as TOTP seeds. */
+  ENCRYPTION_KEY: z.string().refine((value) => Buffer.from(value, 'base64').length === 32, {
+    message: 'ENCRYPTION_KEY must be 32 bytes encoded as base64',
+  }),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
