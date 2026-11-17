@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "lesson_progress" ADD COLUMN     "started_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

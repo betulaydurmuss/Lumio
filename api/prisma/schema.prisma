@@ -74,6 +74,7 @@ model User {
   sessions           Session[]
   auditLogs          AuditLog[]
   verificationTokens EmailVerification[]
+  passwordResets     PasswordReset[]
   enrollments        Enrollment[]
   lessonProgress     LessonProgress[]
   quizAttempts       QuizAttempt[]
@@ -100,6 +101,21 @@ model EmailVerification {
 
   @@index([userId])
   @@map("email_verifications")
+}
+
+/// A one-time link that sets a new password. Only its hash is stored.
+model PasswordReset {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
 }
 
 model Session {
@@ -348,6 +364,8 @@ model LessonProgress {
   courseId        String    @map("course_id") @db.Uuid
   positionSeconds Int       @default(0) @map("position_seconds")
   completedAt     DateTime? @map("completed_at")
+  /// When the server first heard about this lesson: the clock completion is measured against.
+  startedAt       DateTime  @default(now()) @map("started_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
