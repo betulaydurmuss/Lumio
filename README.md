@@ -288,6 +288,18 @@ than people: a personal account is listed as "Personal account", because its org
 named after its owner. From here a course can be taken off the catalog; learners already enrolled
 keep their access, everyone else stops seeing it.
 
+The console also edits the catalog itself:
+
+- **Courses.** Titles, subtitles and descriptions in both languages, level, category and whether
+  the course earns a certificate. Search picks up the new words at once. Certificates already
+  issued keep the title they were signed with.
+- **Categories.** A two-level tree that can be added to and renamed; a category can only be
+  deleted once no course or subcategory uses it.
+- **Edits stick.** Every deploy runs the demo seed again, and the seed leaves alone any course or
+  category the operator has changed, as it does a course the operator has unpublished.
+
+Every edit is in the audit log.
+
 The platform admin role is granted only on the server, never through the API:
 
 ```sh
