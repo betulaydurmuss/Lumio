@@ -19,6 +19,7 @@ import { ApiError } from '../api/client.js';
 import { useLesson, useOutline, useQuiz, useSaveProgress } from '../api/learn.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 import { InteractiveLesson } from '../components/lessons/InteractiveLesson.js';
+import { LessonFiles } from '../components/lessons/LessonFiles.js';
 import { ReadingLesson } from '../components/lessons/ReadingLesson.js';
 import { VideoLesson } from '../components/lessons/VideoLesson.js';
 import { QuizPanel } from '../components/QuizPanel.js';
@@ -362,6 +363,7 @@ export function PlayerPage() {
                 canSave={data.enrolled}
                 onCompleted={() => setJustCompleted(true)}
               />
+              <LessonFiles files={view.attachments} />
 
               <nav
                 className="lesson-nav"

@@ -609,3 +609,90 @@
     display: none !important;
   }
 }
+
+/* Lesson files */
+.lesson-files {
+  margin-top: 20px;
+}
+.lesson-files ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+.lesson-files li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.lesson-files a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* Learning stats */
+.stats-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.stats-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.stats-tiles dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.stats-tiles dd {
+  margin: 6px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+.week {
+  margin: 0;
+}
+.week figcaption {
+  font-weight: 600;
+}
+.week ol {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: end;
+  gap: 6px;
+  height: 120px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.week li {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  text-align: center;
+}
+.week .bar {
+  align-self: end;
+  min-height: 3px;
+  border-radius: 4px 4px 0 0;
+  background: var(--amber-500);
+}
+.week .day {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  .stats-strip {
+    grid-template-columns: 1fr;
+  }
+}

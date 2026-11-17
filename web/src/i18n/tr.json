@@ -334,7 +334,8 @@
     "finish": "Dersi bitir",
     "allDoneTitle": "Tebrikler, kursun bütün derslerini tamamladın!",
     "allDoneBody": "Şimdi sınavlara geçebilirsin; hepsini geçtiğinde kurs tamamlanır.",
-    "lessonNotFound": "Bu ders bulunamadı."
+    "lessonNotFound": "Bu ders bulunamadı.",
+    "files": "Ders dosyaları"
   },
   "quiz": {
     "sectionQuiz": "Bölüm sınavı",
@@ -599,5 +600,19 @@
     "text": "Lumio yalnızca çalışması için gereken çerezleri kullanır: oturumun ve güvenliği. Analitik ya da reklam çerezi yoktur.",
     "more": "Ayrıntılar",
     "ok": "Anladım"
+  },
+  "stats": {
+    "title": "Öğrenme durumun",
+    "hours": "Öğrenilen saat",
+    "streak": "Güncel seri",
+    "days_one": "{{count}} gün",
+    "days_other": "{{count}} gün",
+    "lessons": "Biten ders",
+    "certificates": "Sertifika",
+    "week": "Son 7 gün",
+    "longest_one": "en uzun seri {{count}} gün",
+    "longest_other": "en uzun seri {{count}} gün",
+    "minutes_one": "{{count}} dakika",
+    "minutes_other": "{{count}} dakika"
   }
 }

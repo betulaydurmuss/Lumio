@@ -334,7 +334,8 @@
     "finish": "Finish the lesson",
     "allDoneTitle": "Well done, you have completed every lesson in this course!",
     "allDoneBody": "You can now take the quizzes; once you pass them all, the course is complete.",
-    "lessonNotFound": "This lesson could not be found."
+    "lessonNotFound": "This lesson could not be found.",
+    "files": "Lesson files"
   },
   "quiz": {
     "sectionQuiz": "Section quiz",
@@ -599,5 +600,19 @@
     "text": "Lumio uses only the cookies it needs to work: your session and its security. No analytics or advertising cookies.",
     "more": "Learn more",
     "ok": "Got it"
+  },
+  "stats": {
+    "title": "Your learning",
+    "hours": "Hours learned",
+    "streak": "Current streak",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "lessons": "Lessons finished",
+    "certificates": "Certificates",
+    "week": "Past 7 days",
+    "longest_one": "longest streak {{count}} day",
+    "longest_other": "longest streak {{count}} days",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes"
   }
 }

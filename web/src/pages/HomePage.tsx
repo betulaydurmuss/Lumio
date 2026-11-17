@@ -5,6 +5,7 @@ import { useMe } from '../api/auth.js';
 import { useCatalog, useLearning } from '../api/catalog.js';
 import { CourseCard, CourseCardSkeleton } from '../components/CourseCard.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
+import { LearningStats } from '../components/LearningStats.js';
 import { SearchBox } from '../components/SearchBox.js';
 
 const pillars = [
@@ -14,6 +15,10 @@ const pillars = [
 ] as const;
 
 const popularParams = new URLSearchParams({ sort: 'popular' });
+
+function SignedInStats() {
+  return <LearningStats enabled={Boolean(useMe().data)} />;
+}
 
 function ContinueRail() {
   const { t } = useTranslation();
@@ -90,6 +95,7 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      <SignedInStats />
       <ContinueRail />
       <PopularRail />
       <section className="section">
