@@ -12,6 +12,8 @@ const TENANT_MODELS = new Set([
   'Certificate',
   'Invitation',
   'Assignment',
+  'Notification',
+  'ConsentRecord',
 ]);
 
 const READ_OR_WRITE_BY_WHERE = new Set([

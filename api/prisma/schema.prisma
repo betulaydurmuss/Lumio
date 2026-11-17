@@ -47,6 +47,8 @@ model Organization {
   certificates   Certificate[]
   invitations    Invitation[]
   assignments    Assignment[]
+  notifications  Notification[]
+  consents       ConsentRecord[]
   wishlist       WishlistItem[]
 
   @@map("organizations")
@@ -85,6 +87,8 @@ model User {
   invitationsSent    Invitation[]
   assignments        Assignment[]        @relation("AssignedTo")
   assignmentsMade    Assignment[]        @relation("AssignedBy")
+  notifications      Notification[]
+  consents           ConsentRecord[]
   wishlist           WishlistItem[]
   instructorProfile  Instructor?
 
@@ -355,6 +359,56 @@ model Assignment {
   @@unique([userId, courseId])
   @@index([orgId, dueOn])
   @@map("assignments")
+}
+
+enum NotificationKind {
+  course_assigned
+  certificate_issued
+  password_changed
+  two_factor_enabled
+}
+
+/// Something a member should know about. Only structured data is stored; the
+/// words are put together in the member's language when it is shown.
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  orgId     String           @map("org_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  kind      NotificationKind
+  data      Json             @default("{}")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([orgId])
+  @@map("notifications")
+}
+
+enum ConsentKind {
+  marketing_email
+}
+
+/// Every time a member gives or withdraws a consent, with the notice version
+/// they saw. The current state is the newest row; the rest is the proof.
+model ConsentRecord {
+  id            String      @id @default(uuid()) @db.Uuid
+  orgId         String      @map("org_id") @db.Uuid
+  userId        String      @map("user_id") @db.Uuid
+  kind          ConsentKind
+  granted       Boolean
+  noticeVersion String      @map("notice_version")
+  ipAddress     String?     @map("ip_address")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+  @@index([orgId])
+  @@map("consent_records")
 }
 
 model WishlistItem {
