@@ -68,13 +68,34 @@ export function toCard(course: CardCourse, locale: Locale): CourseCard {
   };
 }
 
-/** Every word of the query must appear somewhere in the course's folded search text. */
-function searchFilter(q: string | undefined): Prisma.CourseWhereInput[] {
+const MAX_SEARCH_WORDS = 8;
+const MAX_TERM_LENGTH = 60;
+
+/** The words a search is matched on: folded, each once, at most eight. */
+function searchWords(q: string | undefined): string[] {
   const words = normalizeSearch(q ?? '')
     .split(' ')
-    .filter((word) => word.length > 0)
-    .slice(0, 8);
-  return words.map((word) => ({ searchText: { contains: word } }));
+    .filter((word) => word.length > 0);
+  return [...new Set(words)].slice(0, MAX_SEARCH_WORDS);
+}
+
+/** Every word of the query must appear somewhere in the course's folded search text. */
+function searchFilter(q: string | undefined): Prisma.CourseWhereInput[] {
+  return searchWords(q).map((word) => ({ searchText: { contains: word } }));
+}
+
+/**
+ * The search as it may be remembered: only the words it was matched on, cut
+ * between words. Anything after them was never checked against a course.
+ */
+function rememberedTerm(q: string | undefined): string {
+  let term = '';
+  for (const word of searchWords(q)) {
+    const next = term ? `${term} ${word}` : word;
+    if (next.length > MAX_TERM_LENGTH) break;
+    term = next;
+  }
+  return term;
 }
 
 /** The category and everything below it. Unknown slugs match nothing. */
@@ -167,7 +188,7 @@ export function catalogRouter(services: Services): Router {
 
     // Only searches that found something are counted, so "popular searches"
     // can only ever show words that lead to a course.
-    const term = normalizeSearch(query.q ?? '').slice(0, 60);
+    const term = rememberedTerm(query.q);
     if (term.length >= 2 && query.page === 1 && total > 0) {
       await prisma.searchTerm.upsert({
         where: { term },

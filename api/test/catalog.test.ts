@@ -156,6 +156,14 @@ describe('search suggestions', () => {
     ]);
   });
 
+  it('only learns the words a search was actually matched on', async () => {
+    const padded = `${Array(8).fill('kvkk').join(' ')} zzqq evil example com`;
+    for (let i = 0; i < 2; i++) await list(`q=${encodeURIComponent(padded)}`);
+
+    const res = await request(ctx.app).get('/api/catalog/suggest?q=');
+    expect(res.body.popular.some((term: string) => term.includes('zzqq'))).toBe(false);
+  });
+
   it('only learns popular searches that found a course', async () => {
     for (let i = 0; i < 2; i++) {
       await list('q=kvkk');
