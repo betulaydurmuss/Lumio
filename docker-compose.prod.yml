@@ -41,6 +41,7 @@ services:
     environment:
       SMTP_HOST: ${RELAY_SMTP_HOST:?set RELAY_SMTP_HOST in .env}
       SMTP_PORT: ${RELAY_SMTP_PORT:-587}
+      SMTP_REQUIRE_TLS: 'true'
       SMTP_USER: ${RELAY_SMTP_USER:?set RELAY_SMTP_USER in .env}
       SMTP_PASSWORD: ${RELAY_SMTP_PASSWORD:?set RELAY_SMTP_PASSWORD in .env}
       MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
@@ -52,6 +53,8 @@ services:
   postgres:
     restart: unless-stopped
     ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
 
   redis:
     restart: unless-stopped

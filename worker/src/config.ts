@@ -6,6 +6,12 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
+  /**
+   * Refuse to talk to the relay without encryption. On by default: a relay that
+   * does not offer STARTTLS (or an attacker who strips it) would otherwise get the
+   * relay password and every reset link in plain text. Off only for a local catcher.
+   */
+  SMTP_REQUIRE_TLS: z.stringbool().default(true),
   MAIL_FROM: z.string().min(3),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });

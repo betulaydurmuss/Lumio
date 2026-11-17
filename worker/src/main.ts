@@ -5,20 +5,13 @@ import { pino } from 'pino';
 import { loadConfig } from './config.js';
 import { MAIL_QUEUE } from '@lumio/shared';
 import { sendMail } from './mail.js';
+import { transportOptions } from './transport.js';
 
 const config = loadConfig();
 const logger = pino({ level: config.LOG_LEVEL });
 const connection = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null });
 
-const transport = nodemailer.createTransport({
-  host: config.SMTP_HOST,
-  port: config.SMTP_PORT,
-  // Port 465 speaks TLS from the first byte; others upgrade with STARTTLS when offered.
-  secure: config.SMTP_PORT === 465,
-  ...(config.SMTP_USER && config.SMTP_PASSWORD
-    ? { auth: { user: config.SMTP_USER, pass: config.SMTP_PASSWORD } }
-    : {}),
-});
+const transport = nodemailer.createTransport(transportOptions(config));
 
 const mailWorker = new Worker(
   MAIL_QUEUE,
