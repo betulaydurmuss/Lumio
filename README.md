@@ -312,6 +312,29 @@ Every GitHub Action is pinned to a commit, not a tag, so a moved tag cannot chan
 `package.json` names the only packages allowed to run install scripts. Dependabot watches npm,
 Actions and the Docker images and raises alerts; updates are reviewed and committed by hand.
 
+## Backups
+
+`npm run backup` dumps the database, `npm run backup:verify` restores a dump into a scratch
+database and compares every table's row count with the live one, and `npm run restore` (with
+`--yes`, app stopped) brings a dump back. CI takes and verifies a backup on every push, so a
+backup that cannot be restored fails the build. What else must be kept, above all
+`ENCRYPTION_KEY`, and the full recovery steps are in [docs/backup.md](docs/backup.md).
+
+## Accessibility
+
+The interface aims at WCAG 2.1 AA:
+
+- Every form field has a label, errors are announced, and progress bars and the notification bell
+  carry text for screen readers.
+- Keyboard users get a visible focus ring everywhere and a "Skip to content" link first on every
+  page; menus close with Escape.
+- Each page names the browser tab after itself, and the page language follows the TR/EN switch.
+- [web/src/a11y.test.tsx](web/src/a11y.test.tsx) runs axe-core over the sign-in, sign-up,
+  verification, password and privacy pages in both languages, and fails on any violation.
+
+Colour contrast cannot be measured without a layout engine, so it is not part of that test; the
+palette follows the design system's contrast pairs.
+
 ## Repository layout
 
 ```
