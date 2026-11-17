@@ -8,3 +8,4 @@ export * from './learn.js';
 export * from './certificate.js';
 export * from './admin.js';
 export * from './assignments.js';
+export * from './privacy.js';

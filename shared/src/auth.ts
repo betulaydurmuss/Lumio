@@ -33,12 +33,14 @@ export const registerSchema = z
     email,
     password,
     locale: localeSchema,
+    /** Explicit, separate and optional: never a condition of signing up. */
+    marketingConsent: z.boolean().default(false),
   })
   .refine((value) => value.accountType === 'personal' || value.organizationName, {
     path: ['organizationName'],
     message: 'Required for a company account',
   });
-export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterInput = z.input<typeof registerSchema>;
 
 export const loginSchema = z.object({
   email,

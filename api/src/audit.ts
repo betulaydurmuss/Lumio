@@ -16,6 +16,8 @@ export type AuditAction =
   | 'course.enrolled'
   | 'course.assigned'
   | 'assignment.removed'
+  | 'consent.changed'
+  | 'data.exported'
   | 'course.completed'
   | 'certificate.issued'
   | 'certificate.revoked'

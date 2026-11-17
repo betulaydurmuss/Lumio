@@ -13,6 +13,7 @@ import { healthRouter, type HealthChecks } from './routes/health.js';
 import { catalogRouter, learningRouter } from './routes/catalog.js';
 import { certificatesRouter, myCertificatesRouter } from './routes/certificates.js';
 import { learnRouter } from './routes/learn.js';
+import { meRouter } from './routes/me.js';
 import { mediaRouter } from './routes/media.js';
 import { orgRouter } from './routes/org.js';
 import { platformRouter } from './routes/platform.js';
@@ -106,6 +107,7 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/media', mediaRouter(deps.services));
   app.use('/api/certificates', certificatesRouter(deps.services));
   app.use('/api/me', myCertificatesRouter(deps.services));
+  app.use('/api/me', meRouter(deps.services));
 
   app.use(notFound);
   app.use(errorHandler);

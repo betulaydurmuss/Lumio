@@ -70,6 +70,17 @@ async function issued(client: Client) {
 }
 
 describe('issuing', () => {
+  it('leaves the learner a notification pointing at the new certificate', async () => {
+    const { client } = await signedInUser(ctx);
+    const { certificate } = await issued(client);
+
+    const feed = (await client.get('/api/me/notifications')).body;
+    expect(feed.items[0]).toMatchObject({
+      kind: 'certificate_issued',
+      data: { certNo: certificate.certNo },
+    });
+  });
+
   it('issues a numbered certificate the moment the course is complete', async () => {
     const { client, user } = await signedInUser(ctx);
     const { result, certificate } = await issued(client);

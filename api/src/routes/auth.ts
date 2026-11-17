@@ -1,5 +1,6 @@
 import {
   acceptInvitationSchema,
+  PRIVACY_NOTICE_VERSION,
   forgotPasswordSchema,
   invitationTokenSchema,
   loginSchema,
@@ -42,6 +43,7 @@ import { isDisposableEmail } from '../security/disposable.js';
 import { hashPassword, verifyPassword } from '../security/passwords.js';
 import { newTotpSecret, totpEnrollment, verifyTotp } from '../security/totp.js';
 import { passwordFingerprint } from '../security/tokens.js';
+import { notify } from '../notifications.js';
 import type { Services } from '../services.js';
 
 export const MAX_FAILED_LOGINS = 5;
@@ -296,6 +298,18 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
             role: input.accountType === 'company' ? 'org_admin' : 'learner',
           },
         });
+        if (input.marketingConsent) {
+          await tx.consentRecord.create({
+            data: {
+              orgId: organization.id,
+              userId: created.id,
+              kind: 'marketing_email',
+              granted: true,
+              noticeVersion: PRIVACY_NOTICE_VERSION,
+              ipAddress: req.ip ?? null,
+            },
+          });
+        }
         await tx.emailVerification.create({
           data: {
             userId: created.id,
@@ -429,6 +443,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
         where: { userId: record.userId, usedAt: null },
         data: { usedAt: now },
       });
+      await notify(tx, record.user.orgId, [record.userId], 'password_changed');
       await audit(tx, {
         orgId: record.user.orgId,
         actorId: record.userId,
@@ -723,6 +738,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       where: { userId: user.id, id: { not: context.sessionId }, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    await notify(context.db, context.orgId, [user.id], 'two_factor_enabled');
     await audit(context.db, {
       orgId: context.orgId,
       actorId: user.id,

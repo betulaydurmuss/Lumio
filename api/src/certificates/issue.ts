@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { audit } from '../audit.js';
+import { notify } from '../notifications.js';
 import type { PrismaClient } from '../db.js';
 import { Prisma, type Certificate } from '../generated/prisma/client.js';
 import type { AuthContext } from '../middleware/auth.js';
@@ -81,6 +82,11 @@ export async function issueCertificate(
         signature,
         keyId,
       },
+    });
+    await notify(context.db, context.orgId, [context.userId], 'certificate_issued', {
+      certNo: certificate.certNo,
+      courseTitleTr: certificate.courseTitleTr,
+      courseTitleEn: certificate.courseTitleEn,
     });
     await audit(context.db, {
       orgId: context.orgId,

@@ -27,6 +27,7 @@ import {
 import { HttpError } from '../middleware/errors.js';
 import { hashToken, randomToken } from '../security/crypto.js';
 import type { PrismaClient } from '../db.js';
+import { notify } from '../notifications.js';
 import type { Services } from '../services.js';
 
 const idParam = z.uuid();
@@ -395,6 +396,18 @@ export function orgRouter(services: Services): Router {
         }),
       );
     }
+    await notify(
+      context.db,
+      context.orgId,
+      created.map((row) => row.userId),
+      'course_assigned',
+      {
+        courseSlug: course.slug,
+        courseTitleTr: course.titleTr,
+        courseTitleEn: course.titleEn,
+        dueOn: input.dueOn,
+      },
+    );
     if (created.length > 0) {
       await audit(context.db, {
         orgId: context.orgId,
