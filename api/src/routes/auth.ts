@@ -6,6 +6,8 @@ import {
   registerSchema,
   resetPasswordSchema,
   rolesRequiringTwoFactor,
+  loginTotpSchema,
+  RECOVERY_CODE_COUNT,
   totpCodeSchema,
   totpSetupRequestSchema,
   verifyEmailSchema,
@@ -14,6 +16,7 @@ import {
   type Role,
   type SessionInfo,
   type InvitationPreview,
+  type TotpEnabled,
   type TotpSetup,
 } from '@lumio/shared';
 import { Router, type Request, type Response } from 'express';
@@ -38,6 +41,7 @@ import { decrypt, encrypt, hashToken, randomToken } from '../security/crypto.js'
 import { isDisposableEmail } from '../security/disposable.js';
 import { hashPassword, verifyPassword } from '../security/passwords.js';
 import { newTotpSecret, totpEnrollment, verifyTotp } from '../security/totp.js';
+import { passwordFingerprint } from '../security/tokens.js';
 import type { Services } from '../services.js';
 
 export const MAX_FAILED_LOGINS = 5;
@@ -53,6 +57,23 @@ const invalidCredentials = () =>
     'invalid_credentials',
     'Email or password is incorrect, or the account is locked',
   );
+
+/** Lower-case RFC 4648 base32: no 0/1/8/9, so codes read back without confusion. */
+function base32(bytes: Buffer): string {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz234567';
+  let bits = 0;
+  let value = 0;
+  let out = '';
+  for (const byte of bytes) {
+    value = (value << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      out += alphabet[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  return out;
+}
 
 function slugify(name: string): string {
   const base = name
@@ -198,13 +219,6 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     });
   }
 
-  async function hasLiveVerification(userId: string) {
-    const live = await prisma.emailVerification.count({
-      where: { userId, usedAt: null, expiresAt: { gt: new Date() } },
-    });
-    return live > 0;
-  }
-
   /**
    * Drops a sign-up that never proved its address, with the organization it
    * opened if nobody else is in it. An unverified account cannot sign in, so it
@@ -218,6 +232,21 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     if ((await db.user.count({ where: { orgId: user.orgId } })) === 0) {
       await db.organization.delete({ where: { id: user.orgId } });
     }
+  }
+
+  async function checkTotp(userId: string, sealed: string, code: string) {
+    const secret = decrypt(sealed, services.encryptionKey);
+    const fresh = await services.replay.claim(`totp:${userId}:${code}`, 90);
+    return fresh && (await verifyTotp(secret, code));
+  }
+
+  /** Spends one recovery code. One statement, so the same code cannot be spent twice at once. */
+  async function useRecoveryCode(userId: string, code: string) {
+    const spent = await prisma.$executeRaw`
+      UPDATE users
+         SET totp_recovery_codes = array_remove(totp_recovery_codes, ${hashToken(code)})
+       WHERE id = ${userId}::uuid AND ${hashToken(code)} = ANY(totp_recovery_codes)`;
+    return spent === 1;
   }
 
   /** Issues the CSRF cookie. The client calls this once before its first write. */
@@ -235,8 +264,10 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     // Hash first so an existing address costs the same time as a new one.
     const passwordHash = await hashPassword(input.password);
     let existing = await prisma.user.findUnique({ where: { email: input.email } });
-    if (existing && !existing.emailVerifiedAt && !(await hasLiveVerification(existing.id))) {
-      // Nobody proved this address within a day, so it is free again.
+    if (existing && !existing.emailVerifiedAt) {
+      // Nobody has proved this address yet, so the newest sign-up replaces the
+      // old one. A stranger's sign-up cannot hold it: their link also needs
+      // their password, and the owner can simply sign up again.
       await forgetUnverified(prisma, existing);
       existing = null;
     }
@@ -285,9 +316,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       });
 
       const link = `${services.webOrigin}/verify-email?token=${encodeURIComponent(token)}`;
-      await services.mailer.send(
-        verificationMail({ to: user.email, name: user.displayName, link, locale: user.locale }),
-      );
+      await services.mailer.send(verificationMail({ to: user.email, link, locale: user.locale }));
     }
 
     // The same answer either way, so the endpoint cannot be used to find out who has an account.
@@ -295,13 +324,17 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
   });
 
   router.post('/verify-email', limiter, async (req, res) => {
-    const { token } = verifyEmailSchema.parse(req.body);
+    const { token, password } = verifyEmailSchema.parse(req.body);
     const record = await prisma.emailVerification.findUnique({
       where: { tokenHash: hashToken(token) },
       include: { user: true },
     });
     if (!record || record.usedAt || record.expiresAt < new Date()) {
       throw new HttpError(400, 'invalid_token', 'This link is invalid or has expired');
+    }
+    // The mailbox owner may be opening a link from a sign-up they never made.
+    if (!(await verifyPassword(record.user.passwordHash, password))) {
+      throw invalidCredentials();
     }
     await prisma.$transaction([
       prisma.emailVerification.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
@@ -432,7 +465,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     let result: LoginResult;
     if (user.totpEnabledAt) {
       // The attempt stays counted until the code is right as well.
-      setChallengeCookie(res, secure, await tokens.signChallenge(user.id));
+      setChallengeCookie(res, secure, await tokens.signChallenge(user.id, user.passwordHash));
       result = { next: 'totp' };
     } else {
       await resetAttempts(user);
@@ -450,21 +483,28 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
   });
 
   router.post('/login/totp', limiter, async (req, res) => {
-    const { code } = totpCodeSchema.parse(req.body);
+    const input = loginTotpSchema.parse(req.body);
     const challenge = req.signedCookies?.[CHALLENGE_COOKIE] as string | undefined;
-    const userId = challenge ? await tokens.verifyChallenge(challenge) : null;
-    if (!userId) throw new HttpError(401, 'challenge_expired', 'Sign in again');
+    const claims = challenge ? await tokens.verifyChallenge(challenge) : null;
+    if (!claims) throw new HttpError(401, 'challenge_expired', 'Sign in again');
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user?.totpSecret || !user.totpEnabledAt) {
+    const user = await prisma.user.findUnique({ where: { id: claims.userId } });
+    // A challenge won with a password that has since changed is no longer good.
+    if (
+      !user?.totpSecret ||
+      !user.totpEnabledAt ||
+      claims.password !== passwordFingerprint(user.passwordHash)
+    ) {
       throw new HttpError(401, 'challenge_expired', 'Sign in again');
     }
     if (user.disabledAt) throw invalidCredentials();
     if (!(await claimAttempt(req, user))) throw invalidCredentials();
 
-    const secret = decrypt(user.totpSecret, services.encryptionKey);
-    const fresh = await services.replay.claim(`totp:${user.id}:${code}`, 90);
-    if (!fresh || !(await verifyTotp(secret, code))) {
+    const passed =
+      'recoveryCode' in input
+        ? await useRecoveryCode(user.id, input.recoveryCode)
+        : await checkTotp(user.id, user.totpSecret, input.code);
+    if (!passed) {
       await audit(prisma, {
         orgId: user.orgId,
         actorId: user.id,
@@ -662,7 +702,18 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       throw new HttpError(401, 'invalid_code', 'The code is not valid');
     }
 
-    await context.db.user.update({ where: { id: user.id }, data: { totpEnabledAt: new Date() } });
+    // Shown once, stored only as hashes: the way back in if the phone is lost.
+    const recoveryCodes = Array.from({ length: RECOVERY_CODE_COUNT }, () => {
+      const raw = base32(randomBytes(5));
+      return `${raw.slice(0, 4)}-${raw.slice(4)}`;
+    });
+    await context.db.user.update({
+      where: { id: user.id },
+      data: {
+        totpEnabledAt: new Date(),
+        totpRecoveryCodes: recoveryCodes.map((code) => hashToken(code.replace('-', ''))),
+      },
+    });
     // This session just proved the second factor; every other one has to prove it again.
     await context.db.session.update({
       where: { id: context.sessionId },
@@ -685,7 +736,8 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       role: user.role,
     });
     setAccessCookie(res, secure, access);
-    res.json({ status: 'enabled' });
+    const body: TotpEnabled = { status: 'enabled', recoveryCodes };
+    res.json(body);
   });
 
   /** A usable invitation for this token, or a 400 that does not say why. */

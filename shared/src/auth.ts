@@ -51,13 +51,43 @@ export const totpCodeSchema = z.object({
   code: z.string().regex(/^\d{6}$/, 'Six digits'),
 });
 
+/** How many recovery codes are handed out when two-factor authentication is turned on. */
+export const RECOVERY_CODE_COUNT = 10;
+
+/** A recovery code as printed, "abcd-efgh", in any case and with or without the dash. */
+export const recoveryCodeSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z2-7]{4}-?[a-z2-7]{4}$/, 'A recovery code')
+  .transform((value) => value.replace('-', ''));
+
+/** The second sign-in step takes either a code from the app or a recovery code. */
+export const loginTotpSchema = z.union([
+  totpCodeSchema,
+  z.object({ recoveryCode: recoveryCodeSchema }),
+]);
+export type LoginTotpInput = z.input<typeof loginTotpSchema>;
+
+export const totpEnabledSchema = z.object({
+  status: z.literal('enabled'),
+  recoveryCodes: z.string().array(),
+});
+export type TotpEnabled = z.infer<typeof totpEnabledSchema>;
+
 /** Re-entering the password is required to bind a second factor. */
 export const totpSetupRequestSchema = z.object({
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 
+/**
+ * Opening the link proves the mailbox; the password proves the person opening
+ * it is the one who signed up. Without both, whoever first typed someone
+ * else's address could have it activated for them by its owner.
+ */
 export const verifyEmailSchema = z.object({
   token: z.string().min(20).max(200),
+  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 
 export const forgotPasswordSchema = z.object({ email });

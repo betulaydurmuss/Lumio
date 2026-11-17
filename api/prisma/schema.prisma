@@ -63,6 +63,8 @@ model User {
   /// AES-256-GCM ciphertext, never the raw base32 secret.
   totpSecret      String?   @map("totp_secret")
   totpEnabledAt   DateTime? @map("totp_enabled_at")
+  /// SHA-256 hashes of the unused recovery codes; each one opens the account once.
+  totpRecoveryCodes String[] @default([]) @map("totp_recovery_codes")
   failedLogins    Int       @default(0) @map("failed_logins")
   lockedUntil     DateTime? @map("locked_until")
   /// A deactivated member cannot sign in, and their sessions are ended.

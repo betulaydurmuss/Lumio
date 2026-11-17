@@ -62,7 +62,7 @@ describe('tokens', () => {
 
   it('does not accept an MFA challenge as an access token', async () => {
     const service = new TokenService('o'.repeat(40));
-    const challenge = await service.signChallenge('user-id');
+    const challenge = await service.signChallenge('user-id', 'hash');
 
     expect(await service.verifyAccess(challenge)).toBeNull();
   });

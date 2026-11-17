@@ -178,6 +178,7 @@ export async function signedInUser(ctx: TestContext, options: AccountOptions = {
   expect(registered.status).toBe(202);
   const verified = await client.post('/api/auth/verify-email', {
     token: ctx.mailer.tokenFor(email),
+    password: PASSWORD,
   });
   expect(verified.status).toBe(200);
   const login = await client.post('/api/auth/login', { email, password: PASSWORD });

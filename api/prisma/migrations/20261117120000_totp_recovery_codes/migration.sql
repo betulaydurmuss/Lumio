@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "totp_recovery_codes" TEXT[] DEFAULT ARRAY[]::TEXT[];

@@ -92,7 +92,10 @@
     "totpLead": "Enter the 6-digit code from your authenticator app.",
     "code": "Verification code",
     "verify": "Verify",
-    "forgot": "Forgot your password?"
+    "forgot": "Forgot your password?",
+    "recoveryCode": "Recovery code",
+    "useRecovery": "Lost your phone? Use a recovery code",
+    "useApp": "Use the code from the app"
   },
   "signUp": {
     "title": "Create an account",
@@ -118,11 +121,14 @@
     "note": "If it does not arrive, look in your spam folder."
   },
   "verify": {
-    "checking": "Verifying your email address…",
     "done": "Your email address is verified",
     "doneBody": "You can sign in now.",
     "failed": "Verification failed",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "title": "Verify your email address",
+    "lead": "Enter the password you chose when you signed up to activate the account.",
+    "submit": "Verify",
+    "notYou": "Did not sign up yourself? Then someone else typed your address; sign up with your own password instead."
   },
   "account": {
     "title": "My account",
@@ -154,7 +160,9 @@
     "started": "Started",
     "revoke": "Sign out",
     "noSessions": "No active sessions.",
-    "unknownDevice": "Unknown device"
+    "unknownDevice": "Unknown device",
+    "recoveryTitle": "Save these recovery codes now",
+    "recoveryHint": "Each code signs you in once if you lose your phone. They are shown only this time; keep them somewhere safe, away from your phone."
   },
   "admin": {
     "title": "Organization admin",

@@ -4,8 +4,10 @@ import {
   memberSchema,
   meSchema,
   sessionSchema,
+  totpEnabledSchema,
   totpSetupSchema,
   type LoginInput,
+  type LoginTotpInput,
   type Me,
   type RegisterInput,
   type ResetPasswordInput,
@@ -39,21 +41,23 @@ export function useRefreshMe() {
 
 export const authApi = {
   register: (input: RegisterInput) => api('POST', '/api/auth/register', { body: input }),
-  verifyEmail: (token: string) => api('POST', '/api/auth/verify-email', { body: { token } }),
+  verifyEmail: (token: string, password: string) =>
+    api('POST', '/api/auth/verify-email', { body: { token, password } }),
   forgotPassword: (email: string) => api('POST', '/api/auth/password/forgot', { body: { email } }),
   resetPassword: (input: ResetPasswordInput) =>
     api('POST', '/api/auth/password/reset', { body: input }),
   login: (input: LoginInput) =>
     api('POST', '/api/auth/login', { body: input, schema: loginResultSchema }),
-  loginTotp: (code: string) =>
-    api('POST', '/api/auth/login/totp', { body: { code }, schema: loginResultSchema }),
+  loginTotp: (input: LoginTotpInput) =>
+    api('POST', '/api/auth/login/totp', { body: input, schema: loginResultSchema }),
   logout: () => api<void>('POST', '/api/auth/logout'),
   sessions: () => api('GET', '/api/auth/sessions', { schema: sessionSchema.array() }),
   revokeSession: (id: string) =>
     api<void>('DELETE', `/api/auth/sessions/${encodeURIComponent(id)}`),
   totpSetup: (password: string) =>
     api('POST', '/api/auth/totp/setup', { body: { password }, schema: totpSetupSchema }),
-  totpEnable: (code: string) => api('POST', '/api/auth/totp/enable', { body: { code } }),
+  totpEnable: (code: string) =>
+    api('POST', '/api/auth/totp/enable', { body: { code }, schema: totpEnabledSchema }),
   members: () => api('GET', '/api/org/members', { schema: memberSchema.array() }),
   auditLogs: () => api('GET', '/api/org/audit-logs', { schema: auditEntrySchema.array() }),
 };

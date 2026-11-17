@@ -14,6 +14,7 @@ export function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [useRecovery, setUseRecovery] = useState(false);
 
   const destination = (location.state as { from?: string } | null)?.from ?? '/account';
 
@@ -32,7 +33,7 @@ export function SignInPage() {
   });
 
   const totp = useMutation({
-    mutationFn: () => authApi.loginTotp(code),
+    mutationFn: () => authApi.loginTotp(useRecovery ? { recoveryCode: code } : { code }),
     onSuccess: finish,
     onError: () => setCode(''),
   });
@@ -93,28 +94,57 @@ export function SignInPage() {
             <h2>{t('signIn.totpTitle')}</h2>
             <p className="lead">{t('signIn.totpLead')}</p>
             {error && <ErrorAlert error={error} />}
-            <div className="field">
-              <label htmlFor="code">{t('signIn.code')}</label>
-              <input
-                id="code"
-                className="input input-code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                pattern="\d{6}"
-                maxLength={6}
-                required
-                autoFocus
-                value={code}
-                onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-              />
-            </div>
+            {useRecovery ? (
+              <div className="field">
+                <label htmlFor="code">{t('signIn.recoveryCode')}</label>
+                <input
+                  id="code"
+                  className="input input-code"
+                  autoComplete="off"
+                  spellCheck={false}
+                  maxLength={9}
+                  required
+                  autoFocus
+                  value={code}
+                  onChange={(event) => setCode(event.target.value.trim())}
+                />
+              </div>
+            ) : (
+              <div className="field">
+                <label htmlFor="code">{t('signIn.code')}</label>
+                <input
+                  id="code"
+                  className="input input-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  value={code}
+                  onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+            )}
             <button
               className="btn btn-primary btn-block"
               type="submit"
-              disabled={pending || code.length !== 6}
+              disabled={pending || (useRecovery ? code.length < 8 : code.length !== 6)}
             >
               {pending ? t('common.loading') : t('signIn.verify')}
             </button>
+            <p className="auth-switch">
+              <button
+                type="button"
+                className="btn-link"
+                onClick={() => {
+                  setUseRecovery(!useRecovery);
+                  setCode('');
+                }}
+              >
+                {useRecovery ? t('signIn.useApp') : t('signIn.useRecovery')}
+              </button>
+            </p>
           </>
         )}
       </form>

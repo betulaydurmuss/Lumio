@@ -57,6 +57,22 @@ function TwoFactorCard({ me }: { me: Me }) {
         </div>
       )}
 
+      {enable.data && (
+        <div className="recovery-codes">
+          <p>
+            <strong>{t('account.recoveryTitle')}</strong>
+          </p>
+          <p className="hint">{t('account.recoveryHint')}</p>
+          <ul>
+            {enable.data.recoveryCodes.map((recovery) => (
+              <li key={recovery}>
+                <code>{recovery}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {!me.twoFactorEnabled && me.twoFactorRequired && !setup.data && (
         <div className="alert alert-warn" role="status">
           <ShieldAlert size={18} className="ic" aria-hidden="true" />

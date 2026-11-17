@@ -92,7 +92,10 @@
     "totpLead": "Doğrulama uygulamandaki 6 haneli kodu gir.",
     "code": "Doğrulama kodu",
     "verify": "Doğrula",
-    "forgot": "Şifreni mi unuttun?"
+    "forgot": "Şifreni mi unuttun?",
+    "recoveryCode": "Kurtarma kodu",
+    "useRecovery": "Telefonunu mu kaybettin? Kurtarma kodu kullan",
+    "useApp": "Uygulamadaki kodu kullan"
   },
   "signUp": {
     "title": "Hesap oluştur",
@@ -118,11 +121,14 @@
     "note": "E-posta gelmediyse istenmeyen klasörüne bak."
   },
   "verify": {
-    "checking": "E-posta adresin doğrulanıyor…",
     "done": "E-posta adresin doğrulandı",
     "doneBody": "Artık giriş yapabilirsin.",
     "failed": "Doğrulama başarısız",
-    "signIn": "Giriş yap"
+    "signIn": "Giriş yap",
+    "title": "E-posta adresini doğrula",
+    "lead": "Hesabı etkinleştirmek için kayıt olurken belirlediğin şifreyi gir.",
+    "submit": "Doğrula",
+    "notYou": "Kaydı sen yapmadıysan adresini başkası yazmış demektir; kendi şifrenle yeniden kayıt olabilirsin."
   },
   "account": {
     "title": "Hesabım",
@@ -154,7 +160,9 @@
     "started": "Başlangıç",
     "revoke": "Oturumu kapat",
     "noSessions": "Açık oturum yok.",
-    "unknownDevice": "Bilinmeyen cihaz"
+    "unknownDevice": "Bilinmeyen cihaz",
+    "recoveryTitle": "Bu kurtarma kodlarını şimdi kaydet",
+    "recoveryHint": "Telefonunu kaybedersen her kod bir kez giriş yaptırır. Yalnızca bu sefer gösteriliyor; telefonundan ayrı, güvenli bir yerde sakla."
   },
   "admin": {
     "title": "Kurum yönetimi",

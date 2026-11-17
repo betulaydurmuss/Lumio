@@ -1,5 +1,6 @@
 import { roleSchema, type Role } from '@lumio/shared';
 import { jwtVerify, SignJWT } from 'jose';
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
@@ -17,8 +18,21 @@ const accessClaims = z.object({
 
 const challengeClaims = z.object({
   sub: z.string(),
+  pwd: z.string(),
   typ: z.literal('mfa_challenge'),
 });
+
+/**
+ * A short fingerprint of the stored password hash. A challenge carries the one
+ * in force when the password step passed; once the password changes, the
+ * fingerprints differ and the half-finished sign-in is worthless.
+ */
+export function passwordFingerprint(passwordHash: string | null): string {
+  return createHash('sha256')
+    .update(passwordHash ?? '')
+    .digest('base64url')
+    .slice(0, 22);
+}
 
 export interface AccessToken {
   userId: string;
@@ -55,8 +69,8 @@ export class TokenService {
   }
 
   /** Proves the password step passed, so the TOTP step can finish the sign-in. */
-  signChallenge(userId: string): Promise<string> {
-    return new SignJWT({ typ: 'mfa_challenge' })
+  signChallenge(userId: string, passwordHash: string | null): Promise<string> {
+    return new SignJWT({ typ: 'mfa_challenge', pwd: passwordFingerprint(passwordHash) })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(userId)
       .setIssuer(ISSUER)
@@ -65,10 +79,11 @@ export class TokenService {
       .sign(this.key);
   }
 
-  async verifyChallenge(jwt: string): Promise<string | null> {
+  async verifyChallenge(jwt: string): Promise<{ userId: string; password: string } | null> {
     try {
       const { payload } = await jwtVerify(jwt, this.key, { issuer: ISSUER, algorithms: ['HS256'] });
-      return challengeClaims.parse(payload).sub;
+      const claims = challengeClaims.parse(payload);
+      return { userId: claims.sub, password: claims.pwd };
     } catch {
       return null;
     }

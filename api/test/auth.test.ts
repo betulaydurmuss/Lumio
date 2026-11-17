@@ -66,11 +66,66 @@ describe('registration and email verification', () => {
 
     const verified = await client.post('/api/auth/verify-email', {
       token: ctx.mailer.tokenFor(email),
+      password: PASSWORD,
     });
     expect(verified.status).toBe(200);
 
     const login = await client.post('/api/auth/login', { email, password: PASSWORD });
     expect(login.body).toEqual({ next: 'done' });
+  });
+
+  it('does not repeat the name typed at sign-up in the verification mail', async () => {
+    // The mail goes to an address nobody has proved yet, so it carries none of
+    // the registrant's own words.
+    const client = await new Client(ctx.app).init();
+    const email = uniqueEmail();
+    await client.post(
+      '/api/auth/register',
+      registration(email, { displayName: 'Your account is suspended visit evil example' }),
+    );
+
+    const mail = ctx.mailer.sent.at(-1)!;
+    expect(mail.text).not.toContain('suspended');
+    expect(mail.html).not.toContain('suspended');
+  });
+
+  it('only verifies an address for the person who chose its password', async () => {
+    // A stranger signs up with someone else's address. The owner gets the mail
+    // and opens it, but cannot activate an account whose password they never set.
+    const email = uniqueEmail('owner');
+    const stranger = await new Client(ctx.app).init();
+    await stranger.post('/api/auth/register', registration(email, { password: OTHER_PASSWORD }));
+    const token = ctx.mailer.tokenFor(email);
+
+    const owner = await new Client(ctx.app).init();
+    expect((await owner.post('/api/auth/verify-email', { token })).status).toBe(400);
+    const wrong = await owner.post('/api/auth/verify-email', { token, password: PASSWORD });
+    expect(wrong.status).toBe(401);
+
+    const row = await ctx.prisma.user.findUniqueOrThrow({ where: { email } });
+    expect(row.emailVerifiedAt).toBeNull();
+    const login = await stranger.post('/api/auth/login', { email, password: OTHER_PASSWORD });
+    expect(login.body.error.code).toBe('email_not_verified');
+  });
+
+  it('lets the owner sign up over a sign-up that is still waiting for verification', async () => {
+    const email = uniqueEmail('owner');
+    const stranger = await new Client(ctx.app).init();
+    await stranger.post('/api/auth/register', registration(email, { password: OTHER_PASSWORD }));
+
+    const owner = await new Client(ctx.app).init();
+    await owner.post('/api/auth/register', registration(email));
+    const verified = await owner.post('/api/auth/verify-email', {
+      token: ctx.mailer.tokenFor(email),
+      password: PASSWORD,
+    });
+    expect(verified.status).toBe(200);
+
+    expect((await owner.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(200);
+    const late = await new Client(ctx.app).init();
+    expect((await late.post('/api/auth/login', { email, password: OTHER_PASSWORD })).status).toBe(
+      401,
+    );
   });
 
   it('does not reveal whether an address already has an account', async () => {
@@ -105,8 +160,9 @@ describe('registration and email verification', () => {
     await client.post('/api/auth/register', registration(email));
     const token = ctx.mailer.tokenFor(email);
 
-    expect((await client.post('/api/auth/verify-email', { token })).status).toBe(200);
-    expect((await client.post('/api/auth/verify-email', { token })).status).toBe(400);
+    const body = { token, password: PASSWORD };
+    expect((await client.post('/api/auth/verify-email', body)).status).toBe(200);
+    expect((await client.post('/api/auth/verify-email', body)).status).toBe(400);
   });
 
   it('makes the person who opens a company account its admin', async () => {
@@ -410,7 +466,12 @@ describe('getting an account back', () => {
     await register(email, PASSWORD, 'Real Owner');
     const client = await new Client(ctx.app).init();
     expect(
-      (await client.post('/api/auth/verify-email', { token: ctx.mailer.tokenFor(email) })).status,
+      (
+        await client.post('/api/auth/verify-email', {
+          token: ctx.mailer.tokenFor(email),
+          password: PASSWORD,
+        })
+      ).status,
     ).toBe(200);
     expect((await client.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(200);
     const user = await ctx.prisma.user.findUniqueOrThrow({ where: { email } });
@@ -419,6 +480,44 @@ describe('getting an account back', () => {
 });
 
 describe('two-factor authentication', () => {
+  it('does not finish a sign-in begun with a password that has since been reset', async () => {
+    const admin = await signedInAdmin(ctx);
+    const thief = await new Client(ctx.app).init();
+    const begun = await thief.post('/api/auth/login', { email: admin.email, password: PASSWORD });
+    expect(begun.body).toEqual({ next: 'totp' });
+
+    expect((await resetPassword(admin.email, OTHER_PASSWORD)).status).toBe(200);
+    ctx.replay.clear(); // the code itself is fine; only the challenge is stale
+
+    const finish = await thief.post('/api/auth/login/totp', {
+      code: await codeFor(admin.totpSecret),
+    });
+    expect(finish.status).toBe(401);
+    expect(finish.body.error.code).toBe('challenge_expired');
+  });
+
+  it('hands out recovery codes that each open the account once', async () => {
+    const account = await signedInUser(ctx);
+    const setup = await account.client.post('/api/auth/totp/setup', { password: PASSWORD });
+    const enabled = await account.client.post('/api/auth/totp/enable', {
+      code: await codeFor(setup.body.secret),
+    });
+    const codes = enabled.body.recoveryCodes as string[];
+    expect(codes).toHaveLength(10);
+    expect(new Set(codes).size).toBe(10);
+    const stored = await ctx.prisma.user.findUniqueOrThrow({ where: { id: account.user.id } });
+    expect(JSON.stringify(stored)).not.toContain(codes[0]);
+
+    const lostPhone = await new Client(ctx.app).init();
+    await lostPhone.post('/api/auth/login', { email: account.email, password: PASSWORD });
+    const first = await lostPhone.post('/api/auth/login/totp', { recoveryCode: codes[0] });
+    expect(first.status).toBe(200);
+
+    const again = await new Client(ctx.app).init();
+    await again.post('/api/auth/login', { email: account.email, password: PASSWORD });
+    expect((await again.post('/api/auth/login/totp', { recoveryCode: codes[0] })).status).toBe(401);
+  });
+
   it('keeps counting wrong codes when the password is entered again', async () => {
     // Knowing the password must not buy an endless supply of code guesses by
     // signing in again before the fifth wrong one.

@@ -134,6 +134,19 @@
   word-break: break-all;
   margin-top: 6px;
 }
+.recovery-codes ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.recovery-codes code {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
 .inline-form {
   display: flex;
   gap: 10px;
@@ -359,4 +372,15 @@
 }
 .table td.mono {
   white-space: nowrap;
+}
+
+/* A button that reads as a link, for small switches inside a form. */
+.btn-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--amber-600);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
