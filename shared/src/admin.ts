@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './auth.js';
+import { nameSchema, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './auth.js';
 import { localeSchema } from './locale.js';
 
 /**
@@ -42,7 +42,7 @@ export type InvitationPreview = z.infer<typeof invitationPreviewSchema>;
 
 export const acceptInvitationSchema = z.object({
   token: z.string().min(20).max(200),
-  displayName: z.string().trim().min(2).max(120),
+  displayName: nameSchema,
   password: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
   locale: localeSchema,
 });

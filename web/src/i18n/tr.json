@@ -54,7 +54,7 @@
     "back": "Geri"
   },
   "errors": {
-    "invalid_credentials": "E-posta ya da şifre hatalı, veya hesap geçici olarak kilitli. Birkaç başarısız denemeden sonra hesap 15 dakika kilitlenir.",
+    "invalid_credentials": "E-posta ya da şifre hatalı, veya hesap geçici olarak kilitli. Birkaç başarısız denemeden sonra hesap 15 dakika kilitlenir; şifreni yenilersen hemen açılır.",
     "email_not_verified": "Giriş yapmadan önce e-posta adresini doğrulaman gerekiyor. Gelen kutunu kontrol et.",
     "disposable_email": "Geçici e-posta adresleri kabul edilmiyor. Kalıcı bir adres kullan.",
     "invalid_token": "Bu bağlantı geçersiz ya da süresi dolmuş.",
@@ -91,7 +91,8 @@
     "totpTitle": "İki adımlı doğrulama",
     "totpLead": "Doğrulama uygulamandaki 6 haneli kodu gir.",
     "code": "Doğrulama kodu",
-    "verify": "Doğrula"
+    "verify": "Doğrula",
+    "forgot": "Şifreni mi unuttun?"
   },
   "signUp": {
     "title": "Hesap oluştur",
@@ -139,6 +140,7 @@
     "twoFactorOff": "Kapalı",
     "twoFactorRequired": "Rolün gereği iki adımlı doğrulamayı açman gerekiyor.",
     "setup": "İki adımlı doğrulamayı aç",
+    "confirmPassword": "Devam etmek için şifrenizi girin",
     "setupStep1": "Doğrulama uygulamanla (Google Authenticator, Microsoft Authenticator, 1Password…) bu karekodu okut.",
     "qrAlt": "İki adımlı doğrulama karekodu",
     "manual": "Karekodu okutamıyorsan bu anahtarı elle gir:",
@@ -483,5 +485,21 @@
     "unpublish": "Yayından kaldır",
     "publish": "Yayınla",
     "personalAccount": "Bireysel hesap"
+  },
+  "forgot": {
+    "title": "Şifreni mi unuttun?",
+    "lead": "Hesabının e-posta adresini yaz; yeni şifre belirlemen için bir bağlantı gönderelim.",
+    "submit": "Bağlantıyı gönder",
+    "back": "Girişe dön",
+    "sentTitle": "E-postanı kontrol et",
+    "sentBody": "{{email}} adresine ait bir Lumio hesabı varsa yeni şifre bağlantısı yolda. Bağlantı 1 saat geçerli."
+  },
+  "reset": {
+    "title": "Yeni şifreni belirle",
+    "lead": "Yeni şifreni kaydettiğinde tüm cihazlardaki oturumların kapanır.",
+    "password": "Yeni şifre",
+    "submit": "Yeni şifreyi kaydet",
+    "done": "Şifren değiştirildi",
+    "doneBody": "Yeni şifrenle giriş yapabilirsin."
   }
 }

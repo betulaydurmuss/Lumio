@@ -17,8 +17,14 @@ function TwoFactorCard({ me }: { me: Me }) {
   const refreshMe = useRefreshMe();
   const queryClient = useQueryClient();
   const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
 
-  const setup = useMutation({ mutationFn: authApi.totpSetup });
+  // The password is asked again so a borrowed session alone cannot bind a new
+  // authenticator to the account.
+  const setup = useMutation({
+    mutationFn: () => authApi.totpSetup(password),
+    onSettled: () => setPassword(''),
+  });
   const enable = useMutation({
     mutationFn: () => authApi.totpEnable(code),
     onSuccess: async () => {
@@ -61,14 +67,32 @@ function TwoFactorCard({ me }: { me: Me }) {
       {!me.twoFactorEnabled && !setup.data && (
         <>
           {setup.error && <ErrorAlert error={setup.error} />}
-          <button
-            className="btn btn-primary"
-            type="button"
-            disabled={setup.isPending}
-            onClick={() => setup.mutate()}
+          <form
+            className="totp-start"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setup.mutate();
+            }}
           >
-            {setup.isPending ? t('common.loading') : t('account.setup')}
-          </button>
+            <label htmlFor="totp-password">{t('account.confirmPassword')}</label>
+            <div className="inline-form">
+              <input
+                id="totp-password"
+                className="input"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={setup.isPending || password.length === 0}
+              >
+                {setup.isPending ? t('common.loading') : t('account.setup')}
+              </button>
+            </div>
+          </form>
         </>
       )}
 

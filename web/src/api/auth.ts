@@ -8,6 +8,7 @@ import {
   type LoginInput,
   type Me,
   type RegisterInput,
+  type ResetPasswordInput,
 } from '@lumio/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from './client.js';
@@ -39,6 +40,9 @@ export function useRefreshMe() {
 export const authApi = {
   register: (input: RegisterInput) => api('POST', '/api/auth/register', { body: input }),
   verifyEmail: (token: string) => api('POST', '/api/auth/verify-email', { body: { token } }),
+  forgotPassword: (email: string) => api('POST', '/api/auth/password/forgot', { body: { email } }),
+  resetPassword: (input: ResetPasswordInput) =>
+    api('POST', '/api/auth/password/reset', { body: input }),
   login: (input: LoginInput) =>
     api('POST', '/api/auth/login', { body: input, schema: loginResultSchema }),
   loginTotp: (code: string) =>
@@ -47,7 +51,8 @@ export const authApi = {
   sessions: () => api('GET', '/api/auth/sessions', { schema: sessionSchema.array() }),
   revokeSession: (id: string) =>
     api<void>('DELETE', `/api/auth/sessions/${encodeURIComponent(id)}`),
-  totpSetup: () => api('POST', '/api/auth/totp/setup', { schema: totpSetupSchema }),
+  totpSetup: (password: string) =>
+    api('POST', '/api/auth/totp/setup', { body: { password }, schema: totpSetupSchema }),
   totpEnable: (code: string) => api('POST', '/api/auth/totp/enable', { body: { code } }),
   members: () => api('GET', '/api/org/members', { schema: memberSchema.array() }),
   auditLogs: () => api('GET', '/api/org/audit-logs', { schema: auditEntrySchema.array() }),

@@ -32,6 +32,25 @@ function registration(email: string, overrides: object = {}) {
 }
 
 describe('registration and email verification', () => {
+  it('refuses line breaks and control characters in names', async () => {
+    const client = await new Client(ctx.app).init();
+    const res = await client.post(
+      '/api/auth/register',
+      registration(uniqueEmail(), {
+        accountType: 'company',
+        organizationName: 'Acme\r\nBcc: victim@example.com',
+      }),
+    );
+    expect(res.status).toBe(400);
+
+    const name = await client.post(
+      '/api/auth/register',
+      registration(uniqueEmail(), { displayName: 'Ayşe\u0000Yılmaz' }),
+    );
+    expect(name.status).toBe(400);
+    expect(ctx.mailer.sent).toHaveLength(0);
+  });
+
   it('sends a Turkish verification mail and blocks sign-in until it is used', async () => {
     const client = await new Client(ctx.app).init();
     const email = uniqueEmail();
@@ -123,6 +142,24 @@ describe('sign-in', () => {
     ).toBe(1);
   });
 
+  it('counts every wrong password sent at the same moment', async () => {
+    // Twenty guesses fired together must not all read the same old count and
+    // so add up to a single failure.
+    const { email, user } = await signedInUser(ctx);
+    const clients = await Promise.all(Array.from({ length: 20 }, () => new Client(ctx.app).init()));
+
+    await Promise.all(
+      clients.map((client) =>
+        client.post('/api/auth/login', { email, password: 'wrong password!!' }),
+      ),
+    );
+
+    const after = await ctx.prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(after.lockedUntil).not.toBeNull();
+    const fresh = await new Client(ctx.app).init();
+    expect((await fresh.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(401);
+  });
+
   it('gives the same answer for an unknown address and a wrong password', async () => {
     const { email } = await signedInUser(ctx);
     const client = await new Client(ctx.app).init();
@@ -135,6 +172,14 @@ describe('sign-in', () => {
 
     expect(unknown.status).toBe(wrong.status);
     expect(unknown.body).toEqual(wrong.body);
+  });
+
+  it('rate limits token refreshes', async () => {
+    const limited = buildApp({ authRateLimit: 3 });
+    const client = await new Client(limited.app).init();
+    const statuses = [];
+    for (let i = 0; i < 4; i++) statuses.push((await client.post('/api/auth/refresh')).status);
+    expect(statuses).toEqual([401, 401, 401, 429]);
   });
 
   it('rate limits sign-in attempts per address', async () => {
@@ -184,6 +229,27 @@ describe('CSRF', () => {
   });
 });
 
+describe('bad requests', () => {
+  it("answers broken or oversized JSON as the client's mistake, not the server's", async () => {
+    const client = await new Client(ctx.app).init();
+    const broken = await client.agent
+      .post('/api/auth/login')
+      .set('x-csrf-token', client.csrf)
+      .set('Content-Type', 'application/json')
+      .send('{"email":');
+    expect(broken.status).toBe(400);
+    expect(broken.body.error.code).toBe('invalid_json');
+
+    const huge = await client.agent
+      .post('/api/auth/login')
+      .set('x-csrf-token', client.csrf)
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ email: 'a@example.com', password: 'x'.repeat(2_000_000) }));
+    expect(huge.status).toBe(413);
+    expect(huge.body.error.code).toBe('too_large');
+  });
+});
+
 describe('sessions', () => {
   it('rotates the refresh token, and ends the session when an old one is replayed', async () => {
     const { client } = await signedInUser(ctx);
@@ -201,6 +267,21 @@ describe('sessions', () => {
 
     // The legitimate holder is signed out too: the session itself is gone.
     expect((await client.get('/api/auth/me')).status).toBe(401);
+  });
+
+  it('rotates a refresh token once, however many requests present it together', async () => {
+    // A copied refresh cookie used at the same moment as the real one must not
+    // come away with a working session of its own.
+    const { client } = await signedInUser(ctx);
+    const cookie = client.setCookie('lumio_rt')!.split(';')[0]!;
+    const refresh = () =>
+      request(ctx.app)
+        .post('/api/auth/refresh')
+        .set('Cookie', [cookie, `lumio_csrf=${client.csrf}`])
+        .set('x-csrf-token', client.csrf);
+
+    const results = await Promise.all(Array.from({ length: 20 }, refresh));
+    expect(results.filter((res) => res.status === 204).length).toBeLessThanOrEqual(1);
   });
 
   it('ends the session on logout', async () => {
@@ -226,7 +307,162 @@ describe('sessions', () => {
   });
 });
 
+/** Registers an address with a password, without verifying it. */
+async function register(email: string, password: string, displayName = 'Someone Else') {
+  const client = await new Client(ctx.app).init();
+  const res = await client.post('/api/auth/register', {
+    accountType: 'personal',
+    displayName,
+    email,
+    password,
+    locale: 'en',
+  });
+  expect(res.status).toBe(202);
+  return client;
+}
+
+async function resetPassword(email: string, password: string) {
+  const client = await new Client(ctx.app).init();
+  expect((await client.post('/api/auth/password/forgot', { email })).status).toBe(202);
+  return client.post('/api/auth/password/reset', { token: ctx.mailer.tokenFor(email), password });
+}
+
+const OTHER_PASSWORD = 'an entirely different passphrase';
+
+describe('getting an account back', () => {
+  it('lets the owner of an address take it back from a sign-up they did not make', async () => {
+    // Someone else signed up with this address first, with their own password.
+    const email = uniqueEmail('victim');
+    await register(email, OTHER_PASSWORD);
+
+    const reset = await resetPassword(email, PASSWORD);
+    expect(reset.status).toBe(200);
+
+    const owner = await new Client(ctx.app).init();
+    expect((await owner.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(200);
+    const stranger = await new Client(ctx.app).init();
+    expect(
+      (await stranger.post('/api/auth/login', { email, password: OTHER_PASSWORD })).status,
+    ).toBe(401);
+  });
+
+  it('opens a locked account again, so a stranger cannot keep its owner out', async () => {
+    const { email } = await signedInUser(ctx);
+    const stranger = await new Client(ctx.app).init();
+    for (let i = 0; i < MAX_FAILED_LOGINS; i++) {
+      await stranger.post('/api/auth/login', { email, password: 'wrong password!!' });
+    }
+
+    expect((await resetPassword(email, OTHER_PASSWORD)).status).toBe(200);
+    const owner = await new Client(ctx.app).init();
+    expect((await owner.post('/api/auth/login', { email, password: OTHER_PASSWORD })).status).toBe(
+      200,
+    );
+  });
+
+  it('signs every session out when the password changes', async () => {
+    const { client, email } = await signedInUser(ctx);
+    expect((await client.get('/api/auth/me')).status).toBe(200);
+
+    await resetPassword(email, OTHER_PASSWORD);
+    expect((await client.get('/api/auth/me')).status).toBe(401);
+  });
+
+  it('works once, and says nothing about addresses that have no account', async () => {
+    const { email } = await signedInUser(ctx);
+    const client = await new Client(ctx.app).init();
+    await client.post('/api/auth/password/forgot', { email });
+    const token = ctx.mailer.tokenFor(email);
+    const sent = ctx.mailer.sent.length;
+
+    const unknown = await client.post('/api/auth/password/forgot', { email: uniqueEmail() });
+    expect(unknown.status).toBe(202);
+    expect(ctx.mailer.sent).toHaveLength(sent);
+
+    const first = await client.post('/api/auth/password/reset', {
+      token,
+      password: OTHER_PASSWORD,
+    });
+    expect(first.status).toBe(200);
+    const again = await client.post('/api/auth/password/reset', { token, password: PASSWORD });
+    expect(again.status).toBe(400);
+    expect(again.body.error.code).toBe('invalid_token');
+  });
+
+  it('does not let a deactivated member back in through a reset', async () => {
+    const { email, user } = await signedInUser(ctx);
+    await ctx.prisma.user.update({ where: { id: user.id }, data: { disabledAt: new Date() } });
+    const sent = ctx.mailer.sent.length;
+
+    const client = await new Client(ctx.app).init();
+    expect((await client.post('/api/auth/password/forgot', { email })).status).toBe(202);
+    expect(ctx.mailer.sent).toHaveLength(sent);
+  });
+
+  it('gives an address back once a sign-up left unverified has expired', async () => {
+    const email = uniqueEmail('late');
+    await register(email, OTHER_PASSWORD);
+    await ctx.prisma.emailVerification.updateMany({
+      where: { user: { email } },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    await register(email, PASSWORD, 'Real Owner');
+    const client = await new Client(ctx.app).init();
+    expect(
+      (await client.post('/api/auth/verify-email', { token: ctx.mailer.tokenFor(email) })).status,
+    ).toBe(200);
+    expect((await client.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(200);
+    const user = await ctx.prisma.user.findUniqueOrThrow({ where: { email } });
+    expect(user.displayName).toBe('Real Owner');
+  });
+});
+
 describe('two-factor authentication', () => {
+  it('keeps counting wrong codes when the password is entered again', async () => {
+    // Knowing the password must not buy an endless supply of code guesses by
+    // signing in again before the fifth wrong one.
+    const admin = await signedInAdmin(ctx);
+    const client = await new Client(ctx.app).init();
+    let guess = 0;
+    for (let cycle = 0; cycle < 3; cycle++) {
+      const login = await client.post('/api/auth/login', {
+        email: admin.email,
+        password: PASSWORD,
+      });
+      if (login.status !== 200) break;
+      for (let i = 0; i < 4; i++) {
+        guess += 1;
+        await client.post('/api/auth/login/totp', { code: String(guess).padStart(6, '0') });
+      }
+    }
+
+    const after = await ctx.prisma.user.findUniqueOrThrow({ where: { id: admin.user.id } });
+    expect(after.lockedUntil).not.toBeNull();
+    const again = await client.post('/api/auth/login', { email: admin.email, password: PASSWORD });
+    expect(again.status).toBe(401);
+  });
+
+  it('asks for the password before a second factor can be bound to the account', async () => {
+    // Someone holding only a session (a stolen cookie) must not be able to enrol
+    // their own authenticator and pass the admin 2FA gate with it.
+    const { client, user } = await signedInUser(ctx, { accountType: 'company' });
+
+    expect((await client.post('/api/auth/totp/setup')).status).toBe(400);
+    const wrong = await client.post('/api/auth/totp/setup', { password: 'not the password!' });
+    expect(wrong.status).toBe(401);
+    expect(wrong.body.error.code).toBe('invalid_credentials');
+    expect(
+      (await ctx.prisma.user.findUniqueOrThrow({ where: { id: user.id } })).totpSecret,
+    ).toBeNull();
+    expect((await ctx.prisma.user.findUniqueOrThrow({ where: { id: user.id } })).failedLogins).toBe(
+      1,
+    );
+
+    const right = await client.post('/api/auth/totp/setup', { password: PASSWORD });
+    expect(right.status).toBe(200);
+  });
+
   it('stores the TOTP seed encrypted and asks for a code at the next sign-in', async () => {
     const { client, email, user, totpSecret } = await signedInAdmin(ctx);
 

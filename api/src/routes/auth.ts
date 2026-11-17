@@ -1,10 +1,13 @@
 import {
   acceptInvitationSchema,
+  forgotPasswordSchema,
   invitationTokenSchema,
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
   rolesRequiringTwoFactor,
   totpCodeSchema,
+  totpSetupRequestSchema,
   verifyEmailSchema,
   type LoginResult,
   type Me,
@@ -28,7 +31,7 @@ import {
   setCsrfCookie,
   setSessionCookies,
 } from '../http/cookies.js';
-import { verificationMail } from '../mail/templates.js';
+import { passwordResetMail, verificationMail } from '../mail/templates.js';
 import { auth, requireAuth } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
 import { decrypt, encrypt, hashToken, randomToken } from '../security/crypto.js';
@@ -40,6 +43,9 @@ import type { Services } from '../services.js';
 export const MAX_FAILED_LOGINS = 5;
 export const LOCKOUT_MINUTES = 15;
 const VERIFICATION_TTL_HOURS = 24;
+const RESET_TTL_MINUTES = 60;
+/** At most one reset mail per account in this many minutes, so nobody's inbox can be flooded. */
+const RESET_MAIL_GAP_MINUTES = 5;
 
 const invalidCredentials = () =>
   new HttpError(
@@ -85,6 +91,16 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       next(new HttpError(429, 'rate_limited', 'Too many attempts, try again later')),
   });
 
+  // Refresh runs every 15 minutes per open tab, so it gets a separate, larger allowance.
+  const refreshLimiter = rateLimit({
+    windowMs: 15 * 60_000,
+    limit: options.rateLimit ?? 60,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (_req, _res, next) =>
+      next(new HttpError(429, 'rate_limited', 'Too many attempts, try again later')),
+  });
+
   async function startSession(
     req: Request,
     res: Response,
@@ -113,25 +129,95 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     return session;
   }
 
-  async function recordFailure(
-    req: Request,
-    user: { id: string; orgId: string; failedLogins: number },
-  ) {
-    const failures = user.failedLogins + 1;
-    const locked = failures >= MAX_FAILED_LOGINS;
-    await prisma.user.update({
-      where: { id: user.id },
-      data: locked
-        ? { failedLogins: 0, lockedUntil: new Date(Date.now() + LOCKOUT_MINUTES * 60_000) }
-        : { failedLogins: failures },
+  // Sign-in attempts are counted per account, for the password and the second
+  // factor together. An attempt is taken *before* the password or code is
+  // checked, with one conditional update: requests sent at the same moment each
+  // use one up instead of all reading the same old count, and once five are
+  // used nothing more is checked until the lock runs out. The count only goes
+  // back to zero when a sign-in completes, so entering the right password again
+  // does not buy a fresh set of guesses at the code.
+
+  /** Takes one attempt. False when the account is locked or has none left. */
+  async function claimAttempt(req: Request, user: { id: string; orgId: string }) {
+    const now = new Date();
+    const claimed = await prisma.user.updateMany({
+      where: {
+        id: user.id,
+        failedLogins: { lt: MAX_FAILED_LOGINS },
+        OR: [{ lockedUntil: null }, { lockedUntil: { lte: now } }],
+      },
+      data: { failedLogins: { increment: 1 }, lockedUntil: null },
     });
+    if (claimed.count === 1) return true;
+    await lockIfSpent(req, user);
     await audit(prisma, {
       orgId: user.orgId,
       actorId: user.id,
-      action: locked ? 'auth.account_locked' : 'auth.login_failed',
+      action: 'auth.login_failed',
       ipAddress: req.ip,
-      metadata: { failures },
+      metadata: { reason: 'locked' },
     });
+    return false;
+  }
+
+  /** Locks the account once every attempt has been used, and only once. */
+  async function lockIfSpent(req: Request, user: { id: string; orgId: string }) {
+    const now = new Date();
+    const locked = await prisma.user.updateMany({
+      where: {
+        id: user.id,
+        failedLogins: { gte: MAX_FAILED_LOGINS },
+        OR: [{ lockedUntil: null }, { lockedUntil: { lte: now } }],
+      },
+      data: { failedLogins: 0, lockedUntil: new Date(now.getTime() + LOCKOUT_MINUTES * 60_000) },
+    });
+    if (locked.count === 1) {
+      await audit(prisma, {
+        orgId: user.orgId,
+        actorId: user.id,
+        action: 'auth.account_locked',
+        ipAddress: req.ip,
+      });
+    }
+  }
+
+  async function recordFailure(req: Request, user: { id: string; orgId: string }) {
+    await audit(prisma, {
+      orgId: user.orgId,
+      actorId: user.id,
+      action: 'auth.login_failed',
+      ipAddress: req.ip,
+    });
+    await lockIfSpent(req, user);
+  }
+
+  async function resetAttempts(user: { id: string }) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLogins: 0, lockedUntil: null },
+    });
+  }
+
+  async function hasLiveVerification(userId: string) {
+    const live = await prisma.emailVerification.count({
+      where: { userId, usedAt: null, expiresAt: { gt: new Date() } },
+    });
+    return live > 0;
+  }
+
+  /**
+   * Drops a sign-up that never proved its address, with the organization it
+   * opened if nobody else is in it. An unverified account cannot sign in, so it
+   * has nothing to lose; it only stands between the address and its owner.
+   */
+  async function forgetUnverified(
+    db: Pick<typeof prisma, 'user' | 'organization'>,
+    user: { id: string; orgId: string },
+  ) {
+    await db.user.delete({ where: { id: user.id } });
+    if ((await db.user.count({ where: { orgId: user.orgId } })) === 0) {
+      await db.organization.delete({ where: { id: user.orgId } });
+    }
   }
 
   /** Issues the CSRF cookie. The client calls this once before its first write. */
@@ -148,7 +234,12 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
 
     // Hash first so an existing address costs the same time as a new one.
     const passwordHash = await hashPassword(input.password);
-    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    let existing = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existing && !existing.emailVerifiedAt && !(await hasLiveVerification(existing.id))) {
+      // Nobody proved this address within a day, so it is free again.
+      await forgetUnverified(prisma, existing);
+      existing = null;
+    }
 
     if (!existing) {
       const token = randomToken();
@@ -228,22 +319,106 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     res.json({ status: 'verified' });
   });
 
-  router.post('/login', limiter, async (req, res) => {
-    const input = loginSchema.parse(req.body);
-    const user = await prisma.user.findUnique({ where: { email: input.email } });
-    const passwordOk = await verifyPassword(user?.passwordHash, input.password);
+  // Forgotten password. The link goes to the address on the account, so
+  // whoever can read that mailbox can set the password. That also gives the
+  // address back to its owner when someone else signed up with it, and opens
+  // an account that a stranger keeps locking with wrong passwords.
+  router.post('/password/forgot', limiter, async (req, res) => {
+    const { email } = forgotPasswordSchema.parse(req.body);
+    const user = await prisma.user.findUnique({ where: { email } });
+    const recent = user
+      ? await prisma.passwordReset.count({
+          where: {
+            userId: user.id,
+            createdAt: { gt: new Date(Date.now() - RESET_MAIL_GAP_MINUTES * 60_000) },
+          },
+        })
+      : 0;
 
-    if (!user) throw invalidCredentials();
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
+    if (user && !user.disabledAt && recent === 0) {
+      const token = randomToken();
+      await prisma.passwordReset.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashToken(token),
+          expiresAt: new Date(Date.now() + RESET_TTL_MINUTES * 60_000),
+        },
+      });
       await audit(prisma, {
         orgId: user.orgId,
         actorId: user.id,
-        action: 'auth.login_failed',
+        action: 'auth.password_reset_requested',
         ipAddress: req.ip,
-        metadata: { reason: 'locked' },
       });
-      throw invalidCredentials();
+      const link = `${services.webOrigin}/reset-password?token=${encodeURIComponent(token)}`;
+      await services.mailer.send(passwordResetMail({ to: user.email, link, locale: user.locale }));
     }
+    // The same answer either way, so the endpoint cannot be used to find out who has an account.
+    res.status(202).json({ status: 'reset_sent' });
+  });
+
+  router.post('/password/reset', limiter, async (req, res) => {
+    const input = resetPasswordSchema.parse(req.body);
+    const passwordHash = await hashPassword(input.password);
+    const now = new Date();
+
+    const user = await prisma.$transaction(async (tx) => {
+      // Conditional, so one link used twice at the same moment only works once.
+      const record = await tx.passwordReset.findUnique({
+        where: { tokenHash: hashToken(input.token) },
+        include: { user: true },
+      });
+      const claimed = record
+        ? await tx.passwordReset.updateMany({
+            where: { id: record.id, usedAt: null, expiresAt: { gt: now } },
+            data: { usedAt: now },
+          })
+        : { count: 0 };
+      if (!record || claimed.count === 0 || record.user.disabledAt) {
+        throw new HttpError(400, 'invalid_token', 'This link is invalid or has expired');
+      }
+      await tx.user.update({
+        where: { id: record.userId },
+        data: {
+          passwordHash,
+          failedLogins: 0,
+          lockedUntil: null,
+          // Opening a link sent to the address proves it, as verification would.
+          emailVerifiedAt: record.user.emailVerifiedAt ?? now,
+        },
+      });
+      // Whoever knew the old password, or held a session, is out.
+      await tx.session.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      await tx.passwordReset.updateMany({
+        where: { userId: record.userId, usedAt: null },
+        data: { usedAt: now },
+      });
+      await audit(tx, {
+        orgId: record.user.orgId,
+        actorId: record.userId,
+        action: 'auth.password_reset',
+        ipAddress: req.ip,
+      });
+      return record.user;
+    });
+    clearSessionCookies(res, secure);
+    res.json({ status: 'reset', email: user.email });
+  });
+
+  router.post('/login', limiter, async (req, res) => {
+    const input = loginSchema.parse(req.body);
+    const user = await prisma.user.findUnique({ where: { email: input.email } });
+    const allowed = user ? await claimAttempt(req, user) : false;
+    // Always hashed, so an unknown or locked account answers as slowly as any other.
+    const passwordOk = await verifyPassword(
+      allowed ? user?.passwordHash : undefined,
+      input.password,
+    );
+
+    if (!user || !allowed) throw invalidCredentials();
     if (!passwordOk) {
       await recordFailure(req, user);
       throw invalidCredentials();
@@ -254,16 +429,13 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       throw new HttpError(403, 'email_not_verified', 'Verify your email address first');
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { failedLogins: 0, lockedUntil: null },
-    });
-
     let result: LoginResult;
     if (user.totpEnabledAt) {
+      // The attempt stays counted until the code is right as well.
       setChallengeCookie(res, secure, await tokens.signChallenge(user.id));
       result = { next: 'totp' };
     } else {
+      await resetAttempts(user);
       await startSession(req, res, user, false);
       await audit(prisma, {
         orgId: user.orgId,
@@ -287,8 +459,8 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     if (!user?.totpSecret || !user.totpEnabledAt) {
       throw new HttpError(401, 'challenge_expired', 'Sign in again');
     }
-    if (user.lockedUntil && user.lockedUntil > new Date()) throw invalidCredentials();
     if (user.disabledAt) throw invalidCredentials();
+    if (!(await claimAttempt(req, user))) throw invalidCredentials();
 
     const secret = decrypt(user.totpSecret, services.encryptionKey);
     const fresh = await services.replay.claim(`totp:${user.id}:${code}`, 90);
@@ -304,6 +476,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     }
 
     clearChallengeCookie(res, secure);
+    await resetAttempts(user);
     await startSession(req, res, user, true);
     await audit(prisma, {
       orgId: user.orgId,
@@ -320,7 +493,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
    * Rotates the refresh token on every use. A token that was already rotated
    * away can only be presented by someone who copied it, so the whole session ends.
    */
-  router.post('/refresh', async (req, res) => {
+  router.post('/refresh', refreshLimiter, async (req, res) => {
     const presented = req.signedCookies?.[REFRESH_COOKIE] as string | undefined;
     if (!presented) throw new HttpError(401, 'unauthenticated', 'Sign in required');
     const digest = hashToken(presented);
@@ -351,11 +524,14 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       throw new HttpError(401, 'unauthenticated', 'Session has ended');
     }
 
+    // Conditional, so a token presented twice at the same moment is rotated
+    // once: the second request finds it already replaced and gets nothing.
     const next = randomToken();
-    await prisma.session.update({
-      where: { id: session.id },
+    const rotated = await prisma.session.updateMany({
+      where: { id: session.id, refreshTokenHash: digest, revokedAt: null },
       data: { refreshTokenHash: hashToken(next), previousHash: digest, lastUsedAt: new Date() },
     });
+    if (rotated.count === 0) throw new HttpError(401, 'unauthenticated', 'Sign in required');
     const access = await tokens.signAccess({
       userId: session.userId,
       orgId: session.orgId,
@@ -445,12 +621,22 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     res.status(204).end();
   });
 
-  router.post('/totp/setup', requireAuth(services), async (req, res) => {
+  router.post('/totp/setup', requireAuth(services), limiter, async (req, res) => {
     const context = auth(req);
+    const { password } = totpSetupRequestSchema.parse(req.body);
     const user = await context.db.user.findUniqueOrThrow({ where: { id: context.userId } });
     if (user.totpEnabledAt) {
       throw new HttpError(409, 'totp_already_enabled', 'Two-factor authentication is already on');
     }
+    // Binding a second factor is a privilege change: a session cookie alone must not
+    // be enough, or whoever steals one could enrol their own authenticator and pass
+    // the admin 2FA gate. Wrong passwords count towards the account lockout.
+    if (!(await claimAttempt(req, user))) throw invalidCredentials();
+    if (!(await verifyPassword(user.passwordHash, password))) {
+      await recordFailure(req, user);
+      throw invalidCredentials();
+    }
+    await resetAttempts(user);
     const secret = newTotpSecret();
     await context.db.user.update({
       where: { id: user.id },
@@ -506,10 +692,20 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
   async function openInvitation(token: string) {
     const invitation = await prisma.invitation.findUnique({
       where: { tokenHash: hashToken(token) },
-      include: { organization: true },
+      include: { organization: true, invitedBy: true },
     });
+    // An invitation carries its sender's authority, so it is only as good as
+    // that authority is now: a sender who has since been demoted, deactivated
+    // or moved elsewhere can no longer bring anyone in.
+    const sender = invitation?.invitedBy;
+    const senderCanInvite =
+      sender &&
+      !sender.disabledAt &&
+      sender.orgId === invitation.orgId &&
+      (sender.role === 'org_admin' || sender.role === 'platform_admin');
     if (
       !invitation ||
+      !senderCanInvite ||
       invitation.acceptedAt ||
       invitation.revokedAt ||
       invitation.expiresAt < new Date() ||
@@ -535,7 +731,8 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
   router.post('/invitations/accept', limiter, async (req, res) => {
     const input = acceptInvitationSchema.parse(req.body);
     const invitation = await openInvitation(input.token);
-    if (await prisma.user.findUnique({ where: { email: invitation.email } })) {
+    const existing = await prisma.user.findUnique({ where: { email: invitation.email } });
+    if (existing?.emailVerifiedAt) {
       throw new HttpError(409, 'email_taken', 'This address already has a Lumio account');
     }
     const passwordHash = await hashPassword(input.password);
@@ -549,6 +746,8 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       if (claimed.count === 0) {
         throw new HttpError(400, 'invalid_token', 'This invitation is invalid or has expired');
       }
+      // The invitation mail reached this address; an unverified sign-up never did.
+      if (existing) await forgetUnverified(tx, existing);
       const user = await tx.user.create({
         data: {
           orgId: invitation.orgId,

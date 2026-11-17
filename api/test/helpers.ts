@@ -92,7 +92,7 @@ export function buildApp(options: { authRateLimit?: number } = {}): TestContext 
 export async function resetDatabase(prisma: PrismaClient) {
   // TRUNCATE skips row triggers, so the append-only audit table can be cleared between tests.
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_logs, email_verifications, sessions, invitations, certificates, quiz_attempts, lesson_progress, enrollments, wishlist_items, search_terms',
+    'TRUNCATE TABLE audit_logs, email_verifications, password_resets, sessions, invitations, certificates, quiz_attempts, lesson_progress, enrollments, wishlist_items, search_terms',
   );
   // Users and organizations are deleted rather than truncated with CASCADE, which
   // would follow instructors.user_id into the catalog and wipe the seeded courses.
@@ -186,6 +186,14 @@ export async function signedInUser(ctx: TestContext, options: AccountOptions = {
   return { client, email, user };
 }
 
+/** Moves every watch clock back, as if the learner had been watching for a while. */
+export async function startedWatchingEarlier(prisma: PrismaClient, userId: string) {
+  await prisma.lessonProgress.updateMany({
+    where: { userId },
+    data: { startedAt: new Date(Date.now() - 60 * 60 * 1000) },
+  });
+}
+
 export async function codeFor(secret: string) {
   return generate({ secret });
 }
@@ -193,7 +201,7 @@ export async function codeFor(secret: string) {
 /** A company admin who has turned on 2FA, with a session that passed it. */
 export async function signedInAdmin(ctx: TestContext, organizationName = 'Acme Bilişim') {
   const account = await signedInUser(ctx, { accountType: 'company', organizationName });
-  const setup = await account.client.post('/api/auth/totp/setup');
+  const setup = await account.client.post('/api/auth/totp/setup', { password: PASSWORD });
   expect(setup.status).toBe(200);
   const enabled = await account.client.post('/api/auth/totp/enable', {
     code: await codeFor(setup.body.secret as string),

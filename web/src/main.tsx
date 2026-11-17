@@ -29,6 +29,7 @@ import { CatalogPage } from './pages/CatalogPage.js';
 import { CertificatesPage } from './pages/CertificatesPage.js';
 import { CoursePage } from './pages/CoursePage.js';
 import { CheckEmailPage, VerifyEmailPage } from './pages/EmailPages.js';
+import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordPages.js';
 import { HomePage } from './pages/HomePage.js';
 import { InvitePage } from './pages/InvitePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
@@ -60,6 +61,8 @@ const router = createBrowserRouter([
       { path: 'sign-up', element: <SignUpPage /> },
       { path: 'check-email', element: <CheckEmailPage /> },
       { path: 'verify-email', element: <VerifyEmailPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: 'invite', element: <InvitePage /> },
       {
         element: <RequireAuth />,

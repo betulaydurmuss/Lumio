@@ -82,6 +82,9 @@ export function SignInPage() {
               {pending ? t('common.loading') : t('signIn.submit')}
             </button>
             <p className="auth-switch">
+              <Link to="/forgot-password">{t('signIn.forgot')}</Link>
+            </p>
+            <p className="auth-switch">
               {t('signIn.noAccount')} <Link to="/sign-up">{t('signIn.signUp')}</Link>
             </p>
           </>

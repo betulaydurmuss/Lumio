@@ -39,6 +39,29 @@ export function verificationMail(params: {
   return { to: params.to, subject: t.subject, text, html };
 }
 
+const resetCopy = {
+  tr: {
+    subject: 'Lumio şifreni yenile',
+    body: 'Lumio şifreni yenilemek için aşağıdaki bağlantıyı aç. Bağlantı 1 saat geçerli ve yalnızca bir kez kullanılabilir. Yeni şifren kaydedildiğinde tüm cihazlardaki oturumların kapanır.',
+    ignore: 'Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez.',
+  },
+  en: {
+    subject: 'Reset your Lumio password',
+    body: 'Open the link below to choose a new Lumio password. The link is valid for 1 hour and can be used once. Saving a new password signs you out on every device.',
+    ignore: 'If you did not ask for this, you can ignore this email; your password stays the same.',
+  },
+} as const;
+
+/** Addressed by email, not by name: the name may have been typed by someone else. */
+export function passwordResetMail(params: { to: string; link: string; locale: Locale }): MailJob {
+  const t = resetCopy[params.locale];
+  const text = [t.body, '', params.link, '', t.ignore].join('\n');
+  const html = `<p>${escapeHtml(t.body)}</p>
+<p><a href="${escapeHtml(params.link)}">${escapeHtml(params.link)}</a></p>
+<p style="color:#6B7280">${escapeHtml(t.ignore)}</p>`;
+  return { to: params.to, subject: t.subject, text, html };
+}
+
 const invitationCopy = {
   tr: {
     subject: (org: string) => `${org} seni Lumio'ya davet ediyor`,

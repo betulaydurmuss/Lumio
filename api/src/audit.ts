@@ -9,6 +9,8 @@ export type AuditAction =
   | 'auth.totp_failed'
   | 'auth.logout'
   | 'auth.refresh_reused'
+  | 'auth.password_reset_requested'
+  | 'auth.password_reset'
   | 'session.revoked'
   | 'totp.enabled'
   | 'course.enrolled'

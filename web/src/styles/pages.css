@@ -118,7 +118,8 @@
   border-radius: var(--r);
   margin: 8px 0;
 }
-.totp-setup label {
+.totp-setup label,
+.totp-start label {
   display: block;
   margin-bottom: 8px;
 }

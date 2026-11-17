@@ -54,7 +54,7 @@
     "back": "Back"
   },
   "errors": {
-    "invalid_credentials": "The email or password is wrong, or the account is temporarily locked. After several failed attempts the account locks for 15 minutes.",
+    "invalid_credentials": "The email or password is wrong, or the account is temporarily locked. After several failed attempts the account locks for 15 minutes; resetting the password opens it at once.",
     "email_not_verified": "Verify your email address before signing in. Check your inbox.",
     "disposable_email": "Temporary email addresses are not accepted. Use a permanent address.",
     "invalid_token": "This link is invalid or has expired.",
@@ -91,7 +91,8 @@
     "totpTitle": "Two-factor authentication",
     "totpLead": "Enter the 6-digit code from your authenticator app.",
     "code": "Verification code",
-    "verify": "Verify"
+    "verify": "Verify",
+    "forgot": "Forgot your password?"
   },
   "signUp": {
     "title": "Create an account",
@@ -139,6 +140,7 @@
     "twoFactorOff": "Off",
     "twoFactorRequired": "Your role requires two-factor authentication.",
     "setup": "Turn on two-factor authentication",
+    "confirmPassword": "Enter your password to continue",
     "setupStep1": "Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…).",
     "qrAlt": "Two-factor authentication QR code",
     "manual": "If you cannot scan it, enter this key by hand:",
@@ -483,5 +485,21 @@
     "unpublish": "Unpublish",
     "publish": "Publish",
     "personalAccount": "Personal account"
+  },
+  "forgot": {
+    "title": "Forgot your password?",
+    "lead": "Enter the email address of your account and we will send you a link to choose a new password.",
+    "submit": "Send the link",
+    "back": "Back to sign in",
+    "sentTitle": "Check your email",
+    "sentBody": "If {{email}} has a Lumio account, a link to choose a new password is on its way. The link is valid for 1 hour."
+  },
+  "reset": {
+    "title": "Choose a new password",
+    "lead": "Saving a new password signs you out on every device.",
+    "password": "New password",
+    "submit": "Save the new password",
+    "done": "Your password has been changed",
+    "doneBody": "Sign in with your new password."
   }
 }
