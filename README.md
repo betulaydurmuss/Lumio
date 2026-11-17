@@ -26,7 +26,7 @@ place today and which are still being built.
 
 | Guarantee                                                                               | Status           |
 | --------------------------------------------------------------------------------------- | ---------------- |
-| Configuration is validated at boot; a missing or weak secret stops the process          | In place         |
+| Configuration is validated at boot; a missing, weak or example secret stops the process | In place, tested |
 | Every API response carries strict security headers, `no-store` and a request id         | In place         |
 | The API answers only the web origin, is rate limited, and checks a CSRF token on writes | In place         |
 | One organization cannot read, change or delete another's rows                           | In place, tested |
@@ -60,6 +60,45 @@ anything of the other's. Turning the scope off makes those tests fail.
 - Sign-up answers the same way whether or not the address is already registered, and sign-in gives
   one error for an unknown address, a wrong password and a locked account.
 - TOTP seeds are encrypted with AES-256-GCM before they are stored, and a code is accepted once.
+  Turning two-factor authentication on asks for the password again, so a stolen session alone
+  cannot bind a new authenticator.
+- Wrong passwords and wrong codes share one counter per account. An attempt is counted before it
+  is checked, so guesses sent at the same moment are each counted, and the counter only resets
+  when a sign-in completes, so entering the password again does not buy more guesses at the code.
+- A forgotten password is reset through a one-hour, single-use link sent to the account's address.
+  A reset signs out every device and opens a locked account, so nobody can keep an owner out by
+  locking their account on purpose.
+
+### Security review
+
+The code was reviewed by tracing each entry point to the data it reaches, looking for ways around
+the guarantees above. Every lead was first turned into a test that failed, then fixed, and the
+test now guards the fix. What was found and changed:
+
+| Lead                                                                              | Fix                                                                                               |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| An admin who was demoted kept their pending admin invitations and could come back | Demoting or deactivating revokes their invitations; accepting checks the sender is still an admin |
+| An unverified sign-up could hold someone else's address indefinitely              | It gives way after a day, to an invitation, or to a password reset by the mailbox owner           |
+| Re-entering the password reset the counter for code guesses                       | The counter resets only after the whole sign-in succeeds                                          |
+| Guesses sent together were counted as one                                         | Each attempt is taken from the counter atomically, before it is checked                           |
+| Anyone could keep an account locked                                               | The owner can reset the password, which opens the account                                         |
+| Compose started on secrets written in the repository                              | Compose requires them; `npm run env:init` writes fresh random ones; example values are refused    |
+| Concurrent final exam attempts could exceed three a day                           | The count and the new attempt are one locked step                                                 |
+| Two admins demoting each other at once could leave nobody in charge               | Membership changes in an organization run one at a time                                           |
+| Names could carry line breaks into emails                                         | Names refuse control characters                                                                   |
+| Drawing a certificate held up every other request for up to a second              | Images are drawn on a background thread and kept in memory                                        |
+| Popular searches could carry words no course was matched on                       | Only the words a search was matched on are remembered                                             |
+| A video could be marked watched at once by sending its end position               | The server also checks how long ago the video was started                                         |
+| A refresh token presented twice at once worked twice                              | Rotation is conditional, so it works once                                                         |
+
+Smaller changes from the same review: tokens and verification codes are kept out of API and
+nginx access logs, a media link cannot claim a lifetime longer than the server ever signs,
+malformed or oversized request bodies get a 400 or 413 rather than a 500, Redis requires a
+password, and static assets keep the security headers.
+
+Still open, and known: the rate limiters keep their counts in each API process, so several
+processes need a shared store; HSTS belongs on whichever proxy terminates TLS; and the first
+download of each certificate PDF is still assembled on the main thread.
 
 ## What is stored, and what is never stored
 
@@ -247,9 +286,11 @@ on 1026/8026) so that it can run next to another project's database. Change them
 
 ## Running it locally
 
-The whole stack, built from a clean clone:
+The whole stack, built from a clean clone. The first command writes `.env` with fresh random
+secrets; Compose refuses to start without them rather than fall back to a value in the repository.
 
 ```sh
+npm run env:init
 docker compose up --build
 ```
 
@@ -263,7 +304,7 @@ authentication is on, from `/account`.
 For development with hot reload, start only the services and run the apps on the host:
 
 ```sh
-cp .env.example .env
+npm run env:init
 docker compose up -d postgres redis mailpit
 npm install
 npm run db:migrate
