@@ -11,6 +11,7 @@ const TENANT_MODELS = new Set([
   'QuizAttempt',
   'Certificate',
   'Invitation',
+  'Assignment',
 ]);
 
 const READ_OR_WRITE_BY_WHERE = new Set([

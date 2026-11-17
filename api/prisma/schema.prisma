@@ -46,31 +46,32 @@ model Organization {
   quizAttempts   QuizAttempt[]
   certificates   Certificate[]
   invitations    Invitation[]
+  assignments    Assignment[]
   wishlist       WishlistItem[]
 
   @@map("organizations")
 }
 
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
-  orgId           String    @map("org_id") @db.Uuid
-  email           String
-  displayName     String    @map("display_name")
-  passwordHash    String?   @map("password_hash")
-  role            Role      @default(learner)
-  locale          Locale    @default(tr)
-  emailVerifiedAt DateTime? @map("email_verified_at")
+  id                String    @id @default(uuid()) @db.Uuid
+  orgId             String    @map("org_id") @db.Uuid
+  email             String
+  displayName       String    @map("display_name")
+  passwordHash      String?   @map("password_hash")
+  role              Role      @default(learner)
+  locale            Locale    @default(tr)
+  emailVerifiedAt   DateTime? @map("email_verified_at")
   /// AES-256-GCM ciphertext, never the raw base32 secret.
-  totpSecret      String?   @map("totp_secret")
-  totpEnabledAt   DateTime? @map("totp_enabled_at")
+  totpSecret        String?   @map("totp_secret")
+  totpEnabledAt     DateTime? @map("totp_enabled_at")
   /// SHA-256 hashes of the unused recovery codes; each one opens the account once.
-  totpRecoveryCodes String[] @default([]) @map("totp_recovery_codes")
-  failedLogins    Int       @default(0) @map("failed_logins")
-  lockedUntil     DateTime? @map("locked_until")
+  totpRecoveryCodes String[]  @default([]) @map("totp_recovery_codes")
+  failedLogins      Int       @default(0) @map("failed_logins")
+  lockedUntil       DateTime? @map("locked_until")
   /// A deactivated member cannot sign in, and their sessions are ended.
-  disabledAt      DateTime? @map("disabled_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  disabledAt        DateTime? @map("disabled_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   organization       Organization        @relation(fields: [orgId], references: [id], onDelete: Restrict)
   sessions           Session[]
@@ -82,6 +83,8 @@ model User {
   quizAttempts       QuizAttempt[]
   certificates       Certificate[]
   invitationsSent    Invitation[]
+  assignments        Assignment[]        @relation("AssignedTo")
+  assignmentsMade    Assignment[]        @relation("AssignedBy")
   wishlist           WishlistItem[]
   instructorProfile  Instructor?
 
@@ -263,6 +266,7 @@ model Course {
   instructor   Instructor     @relation(fields: [instructorId], references: [id], onDelete: Restrict)
   sections     Section[]
   enrollments  Enrollment[]
+  assignments  Assignment[]
   wishlistedBy WishlistItem[]
   quizzes      Quiz[]
 
@@ -329,6 +333,28 @@ model Enrollment {
   @@unique([userId, courseId])
   @@index([orgId])
   @@map("enrollments")
+}
+
+/// A course an organization asks one of its members to take, optionally by a date.
+/// Progress itself lives on the enrollment the assignment creates.
+model Assignment {
+  id           String    @id @default(uuid()) @db.Uuid
+  orgId        String    @map("org_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  courseId     String    @map("course_id") @db.Uuid
+  assignedById String?   @map("assigned_by_id") @db.Uuid
+  /// The last day to finish, as a calendar date.
+  dueOn        DateTime? @map("due_on") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation("AssignedTo", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy   User?        @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, courseId])
+  @@index([orgId, dueOn])
+  @@map("assignments")
 }
 
 model WishlistItem {
