@@ -12,7 +12,8 @@
     "verify": "Verify a certificate",
     "platform": "Platform",
     "transcript": "Transcript",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "skip": "Skip to content"
   },
   "home": {
     "pill": "Web · Cybersecurity · KVKK",
@@ -614,5 +615,9 @@
     "longest_other": "longest streak {{count}} days",
     "minutes_one": "{{count}} minute",
     "minutes_other": "{{count}} minutes"
+  },
+  "pageTitles": {
+    "invite": "Invitation",
+    "notFound": "Page not found"
   }
 }

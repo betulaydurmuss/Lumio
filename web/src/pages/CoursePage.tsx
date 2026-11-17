@@ -22,6 +22,7 @@ import { useCourse, useCourseActions, useLocale } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
 import { CourseCard, CoverArt, PriceTag, Rating } from '../components/CourseCard.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
+import { usePageTitle } from '../lib/usePageTitle.js';
 import { PageSkeleton } from '../components/RequireAuth.js';
 import { formatCount, formatDate, formatDuration, isFree } from '../lib/format.js';
 
@@ -251,6 +252,7 @@ export function CoursePage() {
   const locale = useLocale();
   const { slug = '' } = useParams();
   const course = useCourse(slug);
+  usePageTitle(course.data?.title);
 
   if (course.isPending) return <PageSkeleton />;
   if (course.isError) {

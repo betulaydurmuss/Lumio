@@ -18,6 +18,7 @@ import { useLocale } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
 import { useLesson, useOutline, useQuiz, useSaveProgress } from '../api/learn.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
+import { usePageTitle } from '../lib/usePageTitle.js';
 import { InteractiveLesson } from '../components/lessons/InteractiveLesson.js';
 import { LessonFiles } from '../components/lessons/LessonFiles.js';
 import { ReadingLesson } from '../components/lessons/ReadingLesson.js';
@@ -209,6 +210,7 @@ export function PlayerPage() {
   const navigate = useNavigate();
   const { slug = '', lessonId, quizId } = useParams();
   const outline = useOutline(slug);
+  usePageTitle(outline.data?.course.title);
   const lesson = useLesson(slug, lessonId);
   const quiz = useQuiz(slug, quizId);
   const [curriculumOpen, setCurriculumOpen] = useState(false);

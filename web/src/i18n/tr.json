@@ -12,7 +12,8 @@
     "verify": "Sertifika doğrula",
     "platform": "Platform",
     "transcript": "Karnem",
-    "privacy": "Gizlilik ve KVKK"
+    "privacy": "Gizlilik ve KVKK",
+    "skip": "İçeriğe geç"
   },
   "home": {
     "pill": "Web · Siber güvenlik · KVKK",
@@ -614,5 +615,9 @@
     "longest_other": "en uzun seri {{count}} gün",
     "minutes_one": "{{count}} dakika",
     "minutes_other": "{{count}} dakika"
+  },
+  "pageTitles": {
+    "invite": "Davet",
+    "notFound": "Sayfa bulunamadı"
   }
 }

@@ -1,9 +1,12 @@
 import { locales, rolesRequiringTwoFactor, type Locale } from '@lumio/shared';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useMatches, useNavigate } from 'react-router';
 import { authApi, meQueryKey, useMe } from '../api/auth.js';
 import { setLocale } from '../i18n/index.js';
+import { pageTitle } from '../lib/usePageTitle.js';
+import type { RouteHandle } from '../routes.js';
 import { CookieNotice } from './CookieNotice.js';
 import { Logo } from './Logo.js';
 import { NotificationBell } from './NotificationBell.js';
@@ -70,10 +73,31 @@ function AccountNav() {
   );
 }
 
+/** Sets the tab title for pages whose route names one; the others set their own. */
+/**
+ * Names the tab on every navigation. Course and lesson pages have no title of
+ * their own here and rename the tab once their data arrives; this runs before
+ * them in the same commit, so their name wins.
+ */
+function RouteTitle() {
+  const { t } = useTranslation();
+  const match = useMatches().at(-1);
+  const key = (match?.handle as RouteHandle | undefined)?.title;
+  const path = match?.pathname;
+  useEffect(() => {
+    document.title = pageTitle(key ? t(key) : null);
+  }, [key, path, t]);
+  return null;
+}
+
 export function Layout() {
   const { t } = useTranslation();
   return (
     <>
+      <a className="skip-link" href="#main">
+        {t('nav.skip')}
+      </a>
+      <RouteTitle />
       <header className="topbar">
         <div className="wrap">
           <Link to="/" className="brand" aria-label="Lumio">
@@ -87,7 +111,7 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main>
+      <main id="main" tabIndex={-1}>
         <Outlet />
       </main>
       <footer className="site-footer">

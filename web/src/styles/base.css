@@ -298,3 +298,22 @@ code,
     animation: none;
   }
 }
+
+/* Keyboard users can jump past the header; the link shows only when focused. */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--ink, #1c2230);
+  color: #fff;
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 12px;
+}
+main:focus {
+  outline: none;
+}
