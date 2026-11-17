@@ -6,6 +6,7 @@ import {
   buildApp,
   resetDatabase,
   signedInUser,
+  startedWatchingEarlier,
   testPrisma,
   type Client,
   type TestContext,
@@ -53,12 +54,15 @@ async function finishLessons(client: Client) {
   const lessons = await ctx.prisma.lesson.findMany({
     where: { section: { course: { slug: COURSE } } },
   });
-  for (const lesson of lessons) {
-    await client.agent
-      .put(`/api/learn/${COURSE}/lessons/${lesson.id}/progress`)
+  const save = (lessonId: string, body: object) =>
+    client.agent
+      .put(`/api/learn/${COURSE}/lessons/${lessonId}/progress`)
       .set('x-csrf-token', client.csrf)
-      .send({ positionSeconds: 30, completed: true });
-  }
+      .send(body);
+  for (const lesson of lessons) await save(lesson.id, { positionSeconds: 0 });
+  const me = await client.get('/api/auth/me');
+  await startedWatchingEarlier(ctx.prisma, me.body.id);
+  for (const lesson of lessons) await save(lesson.id, { positionSeconds: 30, completed: true });
 }
 
 describe('taking a quiz', () => {
@@ -143,6 +147,19 @@ describe('the final exam', () => {
     for (const result of wrong.results) {
       expect(result).toMatchObject({ correct: null, correctIndex: null, explanation: null });
     }
+  });
+
+  it('holds the daily limit when attempts arrive at the same moment', async () => {
+    const client = await enrolledLearnerWithLessons();
+    const { final } = await quizzes();
+
+    const results = await Promise.all(
+      Array.from({ length: 6 }, () => attempt(client, final.id, wrongAnswers(final))),
+    );
+
+    expect(results.filter((res) => res.status === 201)).toHaveLength(3);
+    expect(results.filter((res) => res.status === 429)).toHaveLength(3);
+    expect(await ctx.prisma.quizAttempt.count({ where: { quizId: final.id } })).toBe(3);
   });
 
   it('allows three attempts a day until it is passed', async () => {

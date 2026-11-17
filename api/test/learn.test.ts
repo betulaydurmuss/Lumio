@@ -10,6 +10,7 @@ import {
   Client,
   resetDatabase,
   signedInUser,
+  startedWatchingEarlier,
   testPrisma,
   type TestContext,
 } from './helpers.js';
@@ -44,6 +45,13 @@ function saveProgress(client: Client, lessonId: string, body: object) {
     .put(`/api/learn/${COURSE}/lessons/${lessonId}/progress`)
     .set('x-csrf-token', client.csrf)
     .send(body);
+}
+
+/** Plays a lesson through: starts it, lets the clock run, then finishes it. */
+async function watchThrough(account: { client: Client; user: { id: string } }, lessonId: string) {
+  await saveProgress(account.client, lessonId, { positionSeconds: 0 });
+  await startedWatchingEarlier(ctx.prisma, account.user.id);
+  return saveProgress(account.client, lessonId, { positionSeconds: 30, completed: true });
 }
 
 describe('opening lessons', () => {
@@ -132,6 +140,14 @@ describe('media links', () => {
     expect((await request(ctx.app).get(`/api/media/${old}`)).status).toBe(410);
   });
 
+  it('refuses a link that claims to last longer than the server ever signs one for', () => {
+    // A genuine signature on a ten-year link can only come from a leaked secret.
+    const signer = new MediaSigner('m'.repeat(40));
+    const forever = signer.sign('demo/lesson.mp4', 10 * 365 * 24 * 3600);
+    expect(signer.verify(forever)).toEqual({ error: 'invalid' });
+    expect(signer.verify(signer.sign('demo/lesson.mp4'))).toEqual({ key: 'demo/lesson.mp4' });
+  });
+
   it('never lets a key leave the media folder', () => {
     expect(isValidMediaKey('demo/lesson.mp4')).toBe(true);
     for (const key of [
@@ -147,10 +163,23 @@ describe('media links', () => {
 });
 
 describe('progress', () => {
-  it('only completes a video once most of it has been watched', async () => {
+  it('does not take the player at its word about how far it got', async () => {
+    // A client can send any position. The server also asks how long ago this
+    // learner started the video: 27 of 30 seconds cannot be watched in one.
     const { client } = await enrolledLearner();
     const video = (await lessonsOf(COURSE)).find((lesson) => lesson.type === 'video')!;
 
+    const res = await saveProgress(client, video.id, { positionSeconds: 30, completed: true });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('not_watched');
+  });
+
+  it('only completes a video once most of it has been watched', async () => {
+    const { client, user } = await enrolledLearner();
+    const video = (await lessonsOf(COURSE)).find((lesson) => lesson.type === 'video')!;
+
+    await saveProgress(client, video.id, { positionSeconds: 0 });
+    await startedWatchingEarlier(ctx.prisma, user.id);
     const early = await saveProgress(client, video.id, { positionSeconds: 10, completed: true });
     expect(early.status).toBe(422);
     expect(early.body.error.code).toBe('not_watched');
@@ -172,10 +201,11 @@ describe('progress', () => {
   });
 
   it('resumes the outline at the first lesson not yet done', async () => {
-    const { client } = await enrolledLearner();
+    const account = await enrolledLearner();
+    const { client } = account;
     const lessons = await lessonsOf(COURSE);
     const [first, second] = lessons;
-    await saveProgress(client, first!.id, { positionSeconds: 30, completed: true });
+    await watchThrough(account, first!.id);
 
     const outline = (await client.get(`/api/learn/${COURSE}`)).body as CourseOutline;
     expect(outline.resumeLessonId).toBe(second!.id);
@@ -197,7 +227,7 @@ describe('progress', () => {
     const a = await enrolledLearner();
     const b = await signedInUser(ctx);
     const lesson = (await lessonsOf(COURSE))[0]!;
-    await saveProgress(a.client, lesson.id, { positionSeconds: 30, completed: true });
+    await watchThrough(a, lesson.id);
 
     expect(await scopedPrisma(ctx.prisma, b.user.orgId).lessonProgress.count()).toBe(0);
     expect(await scopedPrisma(ctx.prisma, a.user.orgId).lessonProgress.count()).toBe(1);

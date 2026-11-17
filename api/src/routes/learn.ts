@@ -4,6 +4,7 @@ import {
   progressUpdateSchema,
   FINAL_EXAM_ATTEMPTS_PER_DAY,
   quizAnswersSchema,
+  MAX_PLAYBACK_RATE,
   VIDEO_COMPLETION_RATIO,
   type CourseOutline,
   type CourseProgress,
@@ -92,6 +93,9 @@ async function learnerState(context: AuthContext, courseId: string) {
 }
 
 type LearnerState = Awaited<ReturnType<typeof learnerState>>;
+
+/** Room for network delay between the player starting and its first save. */
+const WATCH_TIME_SLACK = 0.8;
 
 export function courseProgress(completed: number, total: number): CourseProgress {
   return {
@@ -297,10 +301,16 @@ export function learnRouter(services: Services): Router {
 
     let completedAt = existing?.completedAt ?? null;
     if (update.completed && !completedAt) {
-      // A video only counts once most of it has actually been played.
+      // A video only counts once most of it has actually been played. The
+      // position comes from the player, so it is also held against the time
+      // since the server first heard of this lesson: even at the fastest speed
+      // the player offers, that much video takes that much time.
       if (lesson.type === 'video' && lesson.videoSeconds) {
         const needed = Math.floor(lesson.videoSeconds * VIDEO_COMPLETION_RATIO);
-        if (position < needed) {
+        const startedAt = existing?.startedAt.getTime() ?? Date.now();
+        const elapsed = (Date.now() - startedAt) / 1000;
+        const shortest = (needed / MAX_PLAYBACK_RATE) * WATCH_TIME_SLACK;
+        if (position < needed || elapsed < shortest) {
           throw new HttpError(422, 'not_watched', 'Watch the video before completing it');
         }
       }
@@ -416,17 +426,37 @@ export function learnRouter(services: Services): Router {
     const score = Math.round((correct.filter(Boolean).length / quiz.questions.length) * 100);
     const passed = score >= quiz.passPercent;
 
-    await context.db.quizAttempt.create({
-      data: {
-        orgId: context.orgId,
-        userId: context.userId,
-        quizId: quiz.id,
-        courseId: loaded.course.id,
-        answers,
-        score,
-        passed,
-      },
-    });
+    const data = {
+      orgId: context.orgId,
+      userId: context.userId,
+      quizId: quiz.id,
+      courseId: loaded.course.id,
+      answers,
+      score,
+      passed,
+    };
+    if (attemptsLeft === null) {
+      await context.db.quizAttempt.create({ data });
+    } else {
+      // The daily limit is counted and spent in one transaction, serialised per
+      // learner and exam, so attempts sent at the same moment cannot all slip past
+      // a count taken before any of them was written.
+      await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`quiz-attempts:${context.userId}:${quiz.id}`}))`;
+        const recent = await tx.quizAttempt.count({
+          where: {
+            orgId: context.orgId,
+            userId: context.userId,
+            quizId: quiz.id,
+            createdAt: { gt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          },
+        });
+        if (recent >= FINAL_EXAM_ATTEMPTS_PER_DAY) {
+          throw new HttpError(429, 'attempt_limit', 'No attempts left today; try again tomorrow');
+        }
+        await tx.quizAttempt.create({ data });
+      });
+    }
 
     const { state, newlyCompleted } = await completeIfFinished(context, prisma, loaded, req);
     const certificate = state.completedAt ? await certificateFor(context, loaded, req) : null;

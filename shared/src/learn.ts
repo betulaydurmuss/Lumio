@@ -4,6 +4,9 @@ import { lessonTypes } from './catalog.js';
 /** A video lesson counts as watched once this share of it has been played. */
 export const VIDEO_COMPLETION_RATIO = 0.9;
 
+/** The fastest the player plays; the server allows no faster viewing than this. */
+export const MAX_PLAYBACK_RATE = 2;
+
 // ---- Lesson content -----------------------------------------------------------
 // Content is structured data, never HTML, so it is rendered as text and cannot
 // carry script into the page.

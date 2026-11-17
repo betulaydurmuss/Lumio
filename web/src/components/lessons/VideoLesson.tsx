@@ -1,11 +1,11 @@
-import { VIDEO_COMPLETION_RATIO, type LessonView } from '@lumio/shared';
+import { MAX_PLAYBACK_RATE, VIDEO_COMPLETION_RATIO, type LessonView } from '@lumio/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../api/catalog.js';
 import { useSaveProgress } from '../../api/learn.js';
 import { ErrorAlert } from '../ErrorAlert.js';
 
-const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+const SPEEDS = [0.75, 1, 1.25, 1.5, MAX_PLAYBACK_RATE];
 const SPEED_KEY = 'lumio.playbackRate';
 const SAVE_EVERY_SECONDS = 10;
 
@@ -70,7 +70,11 @@ export function VideoLesson({ slug, lesson, canSave, onCompleted }: Props) {
       lastSaved.current = now;
       save.mutate(
         { positionSeconds: Math.floor(now), completed: true },
-        { onSuccess: (result) => result.completed && onCompleted() },
+        {
+          onSuccess: (result) => result.completed && onCompleted(),
+          // Too early by the server's clock: keep playing and try again later.
+          onError: () => setCompleted(false),
+        },
       );
       return;
     }
@@ -88,6 +92,11 @@ export function VideoLesson({ slug, lesson, canSave, onCompleted }: Props) {
           preload="metadata"
           onLoadedMetadata={onLoadedMetadata}
           onTimeUpdate={onTimeUpdate}
+          // The first play tells the server the video has started, which
+          // starts the clock it checks completion against.
+          onPlay={() =>
+            video.current && !lesson.progress && savePosition(video.current.currentTime)
+          }
           onPause={() => video.current && savePosition(video.current.currentTime)}
         >
           {lesson.video.captions.map((caption) => (
