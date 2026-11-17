@@ -113,6 +113,10 @@ export const lessonViewSchema = z.object({
       captions: z.object({ lang: z.string(), src: z.string() }).array(),
     })
     .nullable(),
+  /** Files that go with the lesson, each behind its own signed link. */
+  attachments: z
+    .object({ title: z.string(), fileName: z.string(), href: z.string(), sizeBytes: z.number() })
+    .array(),
   progress: z.object({ positionSeconds: z.number().int(), completed: z.boolean() }).nullable(),
   previousLessonId: z.string().nullable(),
   nextLessonId: z.string().nullable(),
@@ -187,3 +191,17 @@ export const quizResultSchema = z.object({
   certificateNo: z.string().nullable(),
 });
 export type QuizResult = z.infer<typeof quizResultSchema>;
+
+/** A learner's activity at a glance: time, streak and the past week. */
+export const learningStatsSchema = z.object({
+  /** Length of the lessons finished, in minutes. */
+  minutesLearned: z.number().int(),
+  lessonsCompleted: z.number().int(),
+  coursesCompleted: z.number().int(),
+  certificates: z.number().int(),
+  /** Days in a row with any learning, counted in Turkey's time. */
+  streak: z.object({ current: z.number().int(), longest: z.number().int() }),
+  /** The last seven days, oldest first, with the minutes of lessons finished on each. */
+  week: z.object({ date: z.string(), minutes: z.number().int() }).array().length(7),
+});
+export type LearningStats = z.infer<typeof learningStatsSchema>;

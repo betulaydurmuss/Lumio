@@ -20,10 +20,21 @@ export interface MediaStore {
 const CONTENT_TYPES: Record<string, string> = {
   '.mp4': 'video/mp4',
   '.vtt': 'text/vtt; charset=utf-8',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain; charset=utf-8',
 };
 
-/** Keys are plain relative paths such as `demo/lesson.mp4`: no dots, no absolute paths. */
-const KEY_PATTERN = /^[a-z0-9][a-z0-9_-]*(\/[a-z0-9][a-z0-9_.-]*)*\.(mp4|vtt)$/;
+/**
+ * Keys are plain relative paths such as `demo/lesson.mp4`: no dots, no absolute
+ * paths. Only these types are served at all; nothing a browser would run as a
+ * page (HTML, SVG, JavaScript) can come from the media store.
+ */
+const KEY_PATTERN = /^[a-z0-9][a-z0-9_-]*(\/[a-z0-9][a-z0-9_.-]*)*\.(mp4|vtt|pdf|txt)$/;
+
+/** Played in the page; everything else is a download. */
+export function isStreamed(key: string): boolean {
+  return key.endsWith('.mp4') || key.endsWith('.vtt');
+}
 
 export function isValidMediaKey(key: string): boolean {
   return KEY_PATTERN.test(key) && !key.includes('..');

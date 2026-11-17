@@ -148,6 +148,42 @@ describe('media links', () => {
     expect(signer.verify(signer.sign('demo/lesson.mp4'))).toEqual({ key: 'demo/lesson.mp4' });
   });
 
+  it('hands out a lesson file as a download, behind its own link', async () => {
+    const { client } = await enrolledLearner();
+    const lesson = (await lessonsOf(COURSE)).find(
+      (row) => row.titleEn === 'Rights of the data subject',
+    )!;
+
+    const view = (await client.get(`/api/learn/${COURSE}/lessons/${lesson.id}?locale=en`))
+      .body as LessonView;
+    expect(view.attachments).toEqual([
+      expect.objectContaining({
+        title: 'Data subject request checklist',
+        fileName: 'kvkk-basvuru-kontrol-listesi.txt',
+      }),
+    ]);
+    const file = view.attachments[0]!;
+    expect(file.sizeBytes).toBeGreaterThan(100);
+
+    const download = await request(ctx.app).get(file.href);
+    expect(download.status).toBe(200);
+    expect(download.headers['content-type']).toBe('text/plain; charset=utf-8');
+    expect(download.headers['content-disposition']).toBe(
+      'attachment; filename="kvkk-basvuru-kontrol-listesi.txt"',
+    );
+    expect(download.text).toContain('KVKK');
+  });
+
+  it('keeps the files of a locked lesson from visitors', async () => {
+    const lesson = (await lessonsOf(COURSE)).find(
+      (row) => row.titleEn === 'Rights of the data subject',
+    )!;
+    expect(lesson.isPreview).toBe(false);
+    const res = await request(ctx.app).get(`/api/learn/${COURSE}/lessons/${lesson.id}`);
+    expect(res.status).toBe(403);
+    expect(JSON.stringify(res.body)).not.toContain('/api/media/');
+  });
+
   it('never lets a key leave the media folder', () => {
     expect(isValidMediaKey('demo/lesson.mp4')).toBe(true);
     for (const key of [
@@ -156,6 +192,10 @@ describe('media links', () => {
       '/etc/passwd',
       'demo/lesson.mp4.exe',
       'x.ts',
+      // Nothing that a browser would run as a page is ever served.
+      'demo/page.html',
+      'demo/image.svg',
+      'demo/script.js',
     ]) {
       expect(isValidMediaKey(key)).toBe(false);
     }

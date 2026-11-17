@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pipeline } from 'node:stream/promises';
 import { HttpError } from '../middleware/errors.js';
+import { isStreamed } from '../media/store.js';
 import type { Services } from '../services.js';
 
 /** Parses a single `bytes=start-end` range. Multi-range requests are served whole. */
@@ -42,7 +43,12 @@ export function mediaRouter(services: Services): Router {
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Type', object.contentType);
-    res.setHeader('Content-Disposition', 'inline');
+    // Documents are saved, never shown in our origin: a download cannot act as a page.
+    const name = result.key.split('/').at(-1) ?? 'file';
+    res.setHeader(
+      'Content-Disposition',
+      isStreamed(result.key) ? 'inline' : `attachment; filename="${name}"`,
+    );
 
     const range = parseRange(req.get('range'), object.size);
     if (range === 'unsatisfiable') {

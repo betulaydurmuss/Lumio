@@ -314,11 +314,28 @@ model Lesson {
   captionsEnKey   String?    @map("captions_en_key")
   videoSeconds    Int?       @map("video_seconds")
 
-  section  Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  progress LessonProgress[]
+  section     Section            @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress    LessonProgress[]
+  attachments LessonAttachment[]
 
   @@unique([sectionId, position])
   @@map("lessons")
+}
+
+/// A file that goes with a lesson: a checklist, slides, sample code. Like the
+/// video, it lives in the media store and is handed out by signed link only.
+model LessonAttachment {
+  id       String @id @default(uuid()) @db.Uuid
+  lessonId String @map("lesson_id") @db.Uuid
+  position Int
+  key      String
+  titleTr  String @map("title_tr")
+  titleEn  String @map("title_en")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, position])
+  @@map("lesson_attachments")
 }
 
 model Enrollment {

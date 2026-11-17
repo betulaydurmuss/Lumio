@@ -1,0 +1,36 @@
+LUMIO · OLTALAMA E-POSTASI KONTROL LİSTESİ
+PHISHING EMAIL CHECKLIST
+
+TÜRKÇE
+
+Tıklamadan önce
+[ ] Gönderen adresi gerçekten beklediğin alan adından mı? Benzer harflere dikkat et.
+[ ] Konu acele, korku ya da ödül vaat ediyor mu?
+[ ] Bağlantının üzerine gel: görünen adres ile gerçek adres aynı mı?
+[ ] Beklemediğin bir ek mi? Makro açmanı isteyen belgeleri açma.
+
+Şüphelenirsen
+[ ] Yanıtlama, bağlantıya tıklama, eki açma.
+[ ] Göndereni bildiğin başka bir kanaldan (telefon, kurum içi mesaj) doğrula.
+[ ] Bilgi güvenliği ekibine bildir.
+
+Tıkladıysan
+[ ] Hemen bilgi güvenliği ekibine haber ver; utanma, hız önemli.
+[ ] Girdiğin şifreyi değiştir ve iki adımlı doğrulamayı aç.
+
+ENGLISH
+
+Before you click
+[ ] Is the sender really from the domain you expect? Watch for look-alike letters.
+[ ] Does the subject push urgency, fear or a reward?
+[ ] Hover over the link: does the real address match the one shown?
+[ ] An attachment you did not expect? Do not open documents that ask to enable macros.
+
+If in doubt
+[ ] Do not reply, click or open the attachment.
+[ ] Confirm with the sender through another channel you know (phone, internal chat).
+[ ] Report it to the security team.
+
+If you clicked
+[ ] Tell the security team at once; there is no shame in it, speed matters.
+[ ] Change the password you entered and turn on two-factor authentication.

@@ -1,0 +1,38 @@
+LUMIO · KVKK İLGİLİ KİŞİ BAŞVURUSU KONTROL LİSTESİ
+DATA SUBJECT REQUEST CHECKLIST (KVKK ARTICLE 11)
+
+TÜRKÇE
+
+Başvuru geldiğinde
+[ ] Başvurunun yazılı ya da kayıtlı elektronik posta, güvenli elektronik imza veya
+    kurumun bildirdiği başka bir yöntemle geldiğini kontrol et.
+[ ] Başvuranın kimliğini doğrula; başkası adına başvuruda vekâletnameyi iste.
+[ ] Başvuru tarihini kaydet: yanıt en geç 30 gün içinde verilmelidir.
+
+Talebi incele
+[ ] Talep hangi hakla ilgili? Bilgi isteme, düzeltme, silme, itiraz, tazminat...
+[ ] Kişiye ait verilerin hangi sistemlerde tutulduğunu listele.
+[ ] Verilerin aktarıldığı üçüncü kişileri belirle.
+
+Yanıtla
+[ ] Yanıtı açık ve anlaşılır bir dille, kural olarak ücretsiz ver.
+[ ] Talep reddediliyorsa gerekçesini yaz.
+[ ] Başvuruyu ve yanıtı dosyala.
+
+ENGLISH
+
+When a request arrives
+[ ] Check it came in writing, by registered email, with a secure e-signature, or by
+    another channel the organization announced.
+[ ] Verify the requester's identity; ask for a power of attorney for proxies.
+[ ] Record the date: the answer is due within 30 days at the latest.
+
+Review the request
+[ ] Which right is it about? Information, correction, deletion, objection, damages...
+[ ] List the systems that hold the person's data.
+[ ] Identify third parties the data was shared with.
+
+Answer
+[ ] Answer clearly and, as a rule, free of charge.
+[ ] If refusing, give the reason in writing.
+[ ] File the request and the answer.

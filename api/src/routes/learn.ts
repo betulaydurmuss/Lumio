@@ -258,6 +258,27 @@ export function learnRouter(services: Services): Router {
       lesson.captionsEnKey ? { lang: 'en', src: link(lesson.captionsEnKey) } : null,
     ].filter((caption) => caption !== null);
 
+    const files = await prisma.lessonAttachment.findMany({
+      where: { lessonId: lesson.id },
+      orderBy: { position: 'asc' },
+    });
+    const attachments = (
+      await Promise.all(
+        files.map(async (file) => {
+          const object = await services.media.store.head(file.key);
+          // A file missing from the store is left out rather than linked to a 404.
+          return object
+            ? {
+                title: pick(locale, file.titleTr, file.titleEn),
+                fileName: file.key.split('/').at(-1) ?? file.key,
+                href: link(file.key),
+                sizeBytes: object.size,
+              }
+            : null;
+        }),
+      )
+    ).filter((file) => file !== null);
+
     const body: LessonView = {
       id: lesson.id,
       title: pick(locale, lesson.titleTr, lesson.titleEn),
@@ -269,6 +290,7 @@ export function learnRouter(services: Services): Router {
         lesson.videoKey && lesson.videoSeconds
           ? { src: link(lesson.videoKey), seconds: lesson.videoSeconds, captions }
           : null,
+      attachments,
       progress: progress
         ? { positionSeconds: progress.positionSeconds, completed: Boolean(progress.completedAt) }
         : null,

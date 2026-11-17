@@ -1,6 +1,7 @@
 import { lessonBodySchema, normalizeSearch } from '@lumio/shared';
 import { createPrisma, type PrismaClient } from '../src/db.js';
 import { Prisma } from '../src/generated/prisma/client.js';
+import { attachments } from './seed/attachments.js';
 import { categories, courses, instructors, type CategorySeed } from './seed/catalog-data.js';
 import { lessonContent } from './seed/lesson-content.js';
 import { quizContent, type QuizSeed } from './seed/quiz-content.js';
@@ -138,11 +139,19 @@ export async function seedCatalog(prisma: PrismaClient) {
           bodyEn: written ? lessonBodySchema.parse(written.en) : Prisma.DbNull,
           ...(type === 'video' ? DEMO_VIDEO : NO_VIDEO),
         };
-        await prisma.lesson.upsert({
+        const lessonRow = await prisma.lesson.upsert({
           where: { sectionId_position: { sectionId: sectionRow.id, position: lessonIndex } },
           create: { sectionId: sectionRow.id, position: lessonIndex, ...lesson },
           update: lesson,
         });
+        for (const [position, file] of (attachments[seed.slug]?.[en] ?? []).entries()) {
+          const row = { key: file.key, titleTr: file.title[0], titleEn: file.title[1] };
+          await prisma.lessonAttachment.upsert({
+            where: { lessonId_position: { lessonId: lessonRow.id, position } },
+            create: { lessonId: lessonRow.id, position, ...row },
+            update: row,
+          });
+        }
       }
     }
 
