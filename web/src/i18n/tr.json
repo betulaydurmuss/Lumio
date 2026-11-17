@@ -10,7 +10,8 @@
     "signUp": "Kaydol",
     "certificates": "Sertifikalarım",
     "verify": "Sertifika doğrula",
-    "platform": "Platform"
+    "platform": "Platform",
+    "transcript": "Karnem"
   },
   "home": {
     "pill": "Web · Siber güvenlik · KVKK",
@@ -204,7 +205,10 @@
     "students_other": "{{formatted}} öğrenci",
     "rating": "{{rating}} puan, {{count}} değerlendirme",
     "enrolled": "Kayıtlısın",
-    "progress": "%{{percent}} tamamlandı"
+    "progress": "%{{percent}} tamamlandı",
+    "assigned": "Sana atandı",
+    "dueOn": "Son tarih {{date}}",
+    "overdue": "Süresi geçti"
   },
   "catalog": {
     "title": "Kurs kataloğu",
@@ -426,7 +430,8 @@
     "overview": "Genel bakış",
     "members": "Üyeler",
     "certificates": "Sertifikalar",
-    "audit": "Denetim kaydı"
+    "audit": "Denetim kaydı",
+    "assignments": "Atamalar"
   },
   "adminStats": {
     "members": "Üye",
@@ -509,5 +514,55 @@
     "submit": "Yeni şifreyi kaydet",
     "done": "Şifren değiştirildi",
     "doneBody": "Yeni şifrenle giriş yapabilirsin."
+  },
+  "assign": {
+    "title": "Kurs ata",
+    "lead": "Üyeler hemen kursa kaydedilir ve e-posta alır. Kimin geciktiğini görmek için son tarih seçebilirsin.",
+    "course": "Kurs",
+    "pickCourse": "Kurs seç",
+    "freeOnly": "Şimdilik yalnızca ücretsiz kurslar; ücretliler ödeme sistemiyle gelecek.",
+    "dueOn": "Son tarih",
+    "members": "Üyeler ({{count}} seçili)",
+    "all": "Tümünü seç",
+    "none": "Temizle",
+    "submit": "Ata",
+    "done": "{{assigned}} kişiye atandı; {{alreadyAssigned}} kişide zaten vardı.",
+    "report": "Atama raporu",
+    "reportLead": "Gecikenler en üstte. Karnesini açmak için isme tıkla.",
+    "csv": "CSV indir",
+    "none_yet": "Henüz atama yok.",
+    "member": "Üye",
+    "status": "Durum",
+    "progress": "İlerleme",
+    "actions": "İşlemler",
+    "remove": "Kaldır",
+    "removeConfirm": "Bu atama kaldırılsın mı? Üye kursu ve kurstaki ilerlemesini korur.",
+    "statuses": {
+      "not_started": "Başlamadı",
+      "in_progress": "Devam ediyor",
+      "completed": "Tamamlandı",
+      "overdue": "Süresi geçti"
+    }
+  },
+  "transcript": {
+    "title": "Öğrenme karnesi",
+    "print": "Yazdır ya da PDF kaydet",
+    "generated": "{{date}} tarihinde hazırlandı",
+    "courses": "Kurs",
+    "completed": "Tamamlanan",
+    "hours": "Tamamlanan saat",
+    "certificates": "Sertifika",
+    "empty": "Henüz kurs yok.",
+    "course": "Kurs",
+    "length": "Süre",
+    "enrolled": "Başlangıç",
+    "status": "Durum",
+    "certificate": "Sertifika",
+    "assigned": "Kurum tarafından atandı",
+    "assignedDue": "Atandı, son tarih {{date}}",
+    "hoursShort": "{{hours}} sa",
+    "completedOn": "{{date}} tamamlandı",
+    "percent": "%{{percent}} tamamlandı",
+    "foot": "Sertifika numaraları /dogrula adresinden doğrulanabilir. Bu karne Lumio'da alınan kursları listeler."
   }
 }

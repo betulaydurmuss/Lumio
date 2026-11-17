@@ -10,7 +10,8 @@
     "signUp": "Sign up",
     "certificates": "My certificates",
     "verify": "Verify a certificate",
-    "platform": "Platform"
+    "platform": "Platform",
+    "transcript": "Transcript"
   },
   "home": {
     "pill": "Web · Cybersecurity · KVKK",
@@ -204,7 +205,10 @@
     "students_other": "{{formatted}} learners",
     "rating": "Rated {{rating}}, {{count}} reviews",
     "enrolled": "Enrolled",
-    "progress": "{{percent}}% complete"
+    "progress": "{{percent}}% complete",
+    "assigned": "Assigned to you",
+    "dueOn": "Due {{date}}",
+    "overdue": "Overdue"
   },
   "catalog": {
     "title": "Course catalog",
@@ -426,7 +430,8 @@
     "overview": "Overview",
     "members": "Members",
     "certificates": "Certificates",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "assignments": "Assignments"
   },
   "adminStats": {
     "members": "Members",
@@ -509,5 +514,55 @@
     "submit": "Save the new password",
     "done": "Your password has been changed",
     "doneBody": "Sign in with your new password."
+  },
+  "assign": {
+    "title": "Assign a course",
+    "lead": "Members are enrolled at once and get an email. Choose a due date to see who is late.",
+    "course": "Course",
+    "pickCourse": "Choose a course",
+    "freeOnly": "Free courses only for now; paid ones arrive with payments.",
+    "dueOn": "Due date",
+    "members": "Members ({{count}} chosen)",
+    "all": "Choose all",
+    "none": "Clear",
+    "submit": "Assign",
+    "done": "Assigned to {{assigned}}; {{alreadyAssigned}} already had it.",
+    "report": "Assignment report",
+    "reportLead": "Late ones first. Click a name to open their transcript.",
+    "csv": "Download CSV",
+    "none_yet": "Nothing assigned yet.",
+    "member": "Member",
+    "status": "Status",
+    "progress": "Progress",
+    "actions": "Actions",
+    "remove": "Remove",
+    "removeConfirm": "Remove this assignment? The member keeps the course and what they have done in it.",
+    "statuses": {
+      "not_started": "Not started",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "overdue": "Overdue"
+    }
+  },
+  "transcript": {
+    "title": "Learning transcript",
+    "print": "Print or save as PDF",
+    "generated": "Prepared on {{date}}",
+    "courses": "Courses",
+    "completed": "Completed",
+    "hours": "Hours completed",
+    "certificates": "Certificates",
+    "empty": "No courses yet.",
+    "course": "Course",
+    "length": "Length",
+    "enrolled": "Started",
+    "status": "Status",
+    "certificate": "Certificate",
+    "assigned": "Assigned by the organization",
+    "assignedDue": "Assigned, due {{date}}",
+    "hoursShort": "{{hours}} h",
+    "completedOn": "Completed {{date}}",
+    "percent": "{{percent}}% done",
+    "foot": "Certificate numbers can be checked at /dogrula. This transcript lists courses taken on Lumio."
   }
 }
