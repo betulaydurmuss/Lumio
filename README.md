@@ -183,6 +183,15 @@ implementation is used today, and an S3-compatible one can replace it without to
 routes. Every video lesson in the demo plays the same 30-second clip in
 [api/media/demo](api/media/demo) until real lessons are recorded.
 
+Lessons can carry files, such as the KVKK request checklist, behind the same signed links and the
+same rule as the lesson itself: a visitor sees the files of a free preview, and nothing else. The
+store serves only video, captions, PDF and plain text, and every document is sent as a download,
+so nothing from it can open as a page on Lumio's origin.
+
+Signed-in learners see their week on the home page: hours of finished lessons, lessons and
+certificates, and a streak of days with any learning, counted in Turkey's time so that a lesson
+at 01:00 belongs to the day it was taken.
+
 ### Quizzes
 
 A section can end with a quiz, and a course can end with a final exam that stays locked until
