@@ -21,6 +21,8 @@ const FONT_FILES = readdirSync(FONT_DIR)
   .filter((file) => file.endsWith('.ttf'))
   .map((file) => `${FONT_DIR}/${file}`);
 
+const RENDER_DEADLINE_MS = 30_000;
+
 // Same place relative to this file in src/ (development, tests) and dist/ (production).
 const RENDER_WORKER = new URL('../../workers/certificate-render.mjs', import.meta.url);
 
@@ -257,14 +259,30 @@ interface RenderJob {
  */
 function inWorker(job: RenderJob): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(RENDER_WORKER, { workerData: { ...job, fontFiles: FONT_FILES } });
+    const worker = new Worker(RENDER_WORKER, {
+      workerData: { ...job, fontFiles: FONT_FILES },
+      // A print-size render needs well under this; a runaway one is cut off.
+      resourceLimits: { maxOldGenerationSizeMb: 384, maxYoungGenerationSizeMb: 64 },
+    });
+    let settled = false;
+    const finish = (error: Error | null, bytes?: Buffer) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      if (error) reject(error);
+      else resolve(bytes!);
+    };
+    // A drawing that hangs must not hold its slot in the queue forever.
+    const deadline = setTimeout(() => {
+      void worker.terminate();
+      finish(new Error('Certificate renderer took too long'));
+    }, RENDER_DEADLINE_MS);
     worker.once('message', (bytes: Uint8Array) => {
-      resolve(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+      finish(null, Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength));
     });
-    worker.once('error', reject);
-    worker.once('exit', (code) => {
-      if (code !== 0) reject(new Error(`Certificate renderer stopped with code ${code}`));
-    });
+    worker.once('error', (error) => finish(error));
+    // Exiting without a result, even cleanly, is a failure, not a wait.
+    worker.once('exit', (code) => finish(new Error(`Certificate renderer stopped (${code})`)));
   });
 }
 

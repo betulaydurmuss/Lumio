@@ -2,7 +2,7 @@
 // refuses to run without --yes, and the API and worker should be stopped first.
 // Usage: npm run restore -- backups/lumio-<timestamp>.dump --yes
 import { createReadStream, existsSync } from 'node:fs';
-import { composeEnv, run } from './lib/compose.mjs';
+import { composeEnv, psql, run } from './lib/compose.mjs';
 
 const file = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 if (!file || !existsSync(file)) {
@@ -37,4 +37,7 @@ await run(
   ],
   createReadStream(file),
 );
-console.log('Restored. Start the app again with: docker compose up -d api worker');
+// Sessions in the dump may belong to devices revoked since; everyone signs in again.
+await psql(env, env.db, 'update sessions set revoked_at = now() where revoked_at is null');
+console.log('Restored, and every session was ended.');
+console.log('Start the app again with: docker compose up -d api worker');

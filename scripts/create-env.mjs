@@ -13,11 +13,13 @@ if (existsSync(target)) {
 }
 
 const redisPassword = randomBytes(24).toString('hex');
+const postgresPassword = randomBytes(24).toString('hex');
 const fresh = {
   COOKIE_SECRET: randomBytes(48).toString('base64url'),
   ACCESS_TOKEN_SECRET: randomBytes(48).toString('base64url'),
   ENCRYPTION_KEY: randomBytes(32).toString('base64'),
   REDIS_PASSWORD: redisPassword,
+  POSTGRES_PASSWORD: postgresPassword,
 };
 
 const lines = readFileSync(example, 'utf8')
@@ -26,6 +28,8 @@ const lines = readFileSync(example, 'utf8')
     const key = line.split('=', 1)[0];
     if (key in fresh) return `${key}=${fresh[key]}`;
     if (key === 'REDIS_URL') return line.replace(/:\/\/:[^@]*@/, `://:${redisPassword}@`);
+    if (key === 'DATABASE_URL')
+      return line.replace(/:\/\/([^:]+):[^@]*@/, `://$1:${postgresPassword}@`);
     return line;
   });
 

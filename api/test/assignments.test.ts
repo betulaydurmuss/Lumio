@@ -1,6 +1,7 @@
 import type { Assignment, LearningItem, Transcript } from '@lumio/shared';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { seedCatalog } from '../prisma/seed.js';
+import { csvCell } from '../src/learning/report.js';
 import {
   buildApp,
   Client,
@@ -177,6 +178,13 @@ describe('the assignment report', () => {
     );
     expect(lines[1]).toContain(`"'=HYPERLINK(""http://evil.example"",""x"")"`);
     expect(lines[1]).toContain('"not_started"');
+  });
+
+  it('defuses a formula even behind leading spaces or a line break', () => {
+    for (const value of ['=1+1', '  =1+1', '\t+cmd', '\n@SUM(A1)', '-2']) {
+      expect(csvCell(value).startsWith(`"'`)).toBe(true);
+    }
+    expect(csvCell('Deniz Kara')).toBe('"Deniz Kara"');
   });
 
   it('takes an assignment back without taking the course away', async () => {

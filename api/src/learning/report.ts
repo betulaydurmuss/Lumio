@@ -211,6 +211,6 @@ export async function transcriptFor(
  */
 export function csvCell(value: string | number | null): string {
   const text = value === null ? '' : String(value);
-  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  const safe = /^\s*[=+\-@]/.test(text) || /^[\t\r\n]/.test(text) ? `'${text}` : text;
   return `"${safe.replaceAll('"', '""')}"`;
 }

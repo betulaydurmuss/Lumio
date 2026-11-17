@@ -7,3 +7,5 @@
 .env.*
 *.log
 brand
+# Database dumps hold personal data and never belong in an image.
+backups
