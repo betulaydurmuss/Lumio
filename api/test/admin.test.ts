@@ -429,6 +429,10 @@ describe('the platform console', () => {
     expect((await request(ctx.app).get('/api/learn/kvkk-awareness')).status).toBe(404);
     expect((await learner.client.get('/api/learn/kvkk-awareness')).status).toBe(200);
 
+    // Running the demo seed again (every deploy does) keeps the operator's decision.
+    await seedCatalog(ctx.prisma);
+    expect((await request(ctx.app).get('/api/catalog/courses/kvkk-awareness')).status).toBe(404);
+
     expect((await setStatus('published')).status).toBe(204);
     expect((await request(ctx.app).get('/api/catalog/courses/kvkk-awareness')).status).toBe(200);
     expect(

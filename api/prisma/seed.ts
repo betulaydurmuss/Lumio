@@ -101,11 +101,14 @@ export async function seedCatalog(prisma: PrismaClient) {
       publishedAt: new Date(Date.now() - seed.publishedDaysAgo * 86_400_000),
     };
 
+    const { status: _status, publishedAt: _publishedAt, ...content } = data;
     // Real enrollments are counted on top of the demo figure, so an update leaves the count alone.
     const course = await prisma.course.upsert({
       where: { slug: seed.slug },
       create: { slug: seed.slug, ...data, enrollmentCount: seed.enrollments },
-      update: data,
+      // Whether a course is on the catalog is the platform operator's call once
+      // it exists, so running the seed again (every deploy does) leaves it alone.
+      update: content,
     });
 
     // Sections and lessons are matched by position, so learner progress keeps
