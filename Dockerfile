@@ -37,6 +37,7 @@ COPY --from=prod-deps /app/api/package.json ./api/package.json
 COPY --from=prod-deps /app/api/dist ./api/dist
 COPY --from=prod-deps /app/api/media ./api/media
 COPY --from=prod-deps /app/api/assets ./api/assets
+COPY --from=prod-deps /app/api/workers ./api/workers
 EXPOSE 4000
 CMD ["api/dist/server.js"]
 

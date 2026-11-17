@@ -1,7 +1,6 @@
-import { renderAsync } from '@resvg/resvg-js';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { PDFDocument } from 'pdf-lib';
+import { Worker } from 'node:worker_threads';
 import QRCode from 'qrcode';
 import { SIGNATURE_ALGORITHM } from './signing.js';
 
@@ -21,6 +20,9 @@ const FONT_DIR = fileURLToPath(new URL('../../assets/fonts', import.meta.url));
 const FONT_FILES = readdirSync(FONT_DIR)
   .filter((file) => file.endsWith('.ttf'))
   .map((file) => `${FONT_DIR}/${file}`);
+
+// Same place relative to this file in src/ (development, tests) and dist/ (production).
+const RENDER_WORKER = new URL('../../workers/certificate-render.mjs', import.meta.url);
 
 export interface CertificateView {
   certNo: string;
@@ -242,29 +244,45 @@ export async function renderSvg(view: CertificateView): Promise<string> {
 </svg>`;
 }
 
+interface RenderJob {
+  kind: 'png' | 'pdf';
+  svg: string;
+  width: number;
+  pdf?: { title: string; subject: string; issuedAt: string };
+}
+
 /**
- * A PNG of the certificate. 3508 px wide is A4 at 300 dpi; smaller widths are
- * previews. Drawn on a background thread, so other requests keep moving.
+ * Runs one drawing on a thread of its own. Every step of it, fonts, raster,
+ * PNG encoding and the PDF, is heavy enough to stall the API if done here.
  */
-export async function renderPng(svg: string, width = 3508): Promise<Buffer> {
-  const image = await renderAsync(svg, {
-    fitTo: { mode: 'width', value: width },
-    font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: 'Poppins' },
+function inWorker(job: RenderJob): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(RENDER_WORKER, { workerData: { ...job, fontFiles: FONT_FILES } });
+    worker.once('message', (bytes: Uint8Array) => {
+      resolve(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+    });
+    worker.once('error', reject);
+    worker.once('exit', (code) => {
+      if (code !== 0) reject(new Error(`Certificate renderer stopped with code ${code}`));
+    });
   });
-  return image.asPng();
+}
+
+/** A PNG of the certificate. 3508 px wide is A4 at 300 dpi; smaller widths are previews. */
+export function renderPng(svg: string, width = 3508): Promise<Buffer> {
+  return inWorker({ kind: 'png', svg, width });
 }
 
 /** An A4 landscape PDF carrying the print-quality image and the certificate number. */
-export async function renderPdf(svg: string, view: CertificateView): Promise<Uint8Array> {
-  const pdf = await PDFDocument.create();
-  pdf.setTitle(`Lumio ${view.certNo}`);
-  pdf.setSubject(`${view.courseTitleEn} · ${view.verifyUrl}`);
-  pdf.setAuthor('Lumio');
-  pdf.setCreator('Lumio');
-  pdf.setProducer('Lumio');
-  pdf.setCreationDate(view.issuedAt);
-  const image = await pdf.embedPng(await renderPng(svg));
-  const page = pdf.addPage([841.89, 595.28]);
-  page.drawImage(image, { x: 0, y: 0, width: 841.89, height: 595.28 });
-  return pdf.save();
+export function renderPdf(svg: string, view: CertificateView): Promise<Buffer> {
+  return inWorker({
+    kind: 'pdf',
+    svg,
+    width: 3508,
+    pdf: {
+      title: `Lumio ${view.certNo}`,
+      subject: `${view.courseTitleEn} · ${view.verifyUrl}`,
+      issuedAt: view.issuedAt.toISOString(),
+    },
+  });
 }

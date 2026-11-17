@@ -248,19 +248,25 @@ describe('documents', () => {
     expect(stall).toBeLessThan(150);
   });
 
-  it('draws a PDF once and serves the same file after that', async () => {
+  it('draws a PDF off the main thread once, and serves the same file after that', async () => {
     const { client } = await signedInUser(ctx);
     const { certificate } = await issued(client);
     const url = `/api/certificates/${certificate.certNo}/certificate.pdf?k=${certificate.verifyCode}`;
     const download = () => request(ctx.app).get(url).buffer(true).parse(collect);
 
-    const first = await download();
+    // The first download is drawn from scratch: that must not stall the API either.
+    let first: Awaited<ReturnType<typeof download>> | undefined;
+    expect(
+      await longestStall(async () => {
+        first = await download();
+      }),
+    ).toBeLessThan(150);
     let second: Awaited<ReturnType<typeof download>> | undefined;
     const stall = await longestStall(async () => {
       second = await download();
     });
     expect(stall).toBeLessThan(150);
-    expect(Buffer.compare(first.body as Buffer, second!.body as Buffer)).toBe(0);
+    expect(Buffer.compare(first!.body as Buffer, second!.body as Buffer)).toBe(0);
   });
 
   it('cannot be turned into markup through a name', async () => {

@@ -142,9 +142,7 @@ export function certificatesRouter(services: Services): Router {
 
   router.get('/:certNo/certificate.pdf', verifyLimiter, async (req, res) => {
     const { certificate, view, key, svg } = await document(req);
-    const pdf = await documents.get(`${key}:pdf`, async () =>
-      Buffer.from(await renderPdf(await svg(), view)),
-    );
+    const pdf = await documents.get(`${key}:pdf`, async () => renderPdf(await svg(), view));
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Cache-Control', 'private, max-age=600');
     res.setHeader('Content-Disposition', `attachment; filename="${certificate.certNo}.pdf"`);
