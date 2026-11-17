@@ -16,6 +16,7 @@ import {
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { audit } from '../audit.js';
+import { dateOnly, today, transcriptFor } from '../learning/report.js';
 import type { PrismaClient } from '../db.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { auth, optionalAuth, requireAuth } from '../middleware/auth.js';
@@ -395,7 +396,7 @@ export function learningRouter(services: Services): Router {
   router.get('/learning', requireAuth(services), async (req, res) => {
     const context = auth(req);
     const locale = localeOf(req);
-    const [enrollments, progress, passedAttempts] = await Promise.all([
+    const [enrollments, progress, passedAttempts, assignments] = await Promise.all([
       context.db.enrollment.findMany({
         where: { userId: context.userId },
         include: {
@@ -421,7 +422,13 @@ export function learningRouter(services: Services): Router {
         where: { userId: context.userId, passed: true },
         select: { quizId: true },
       }),
+      context.db.assignment.findMany({
+        where: { userId: context.userId },
+        select: { courseId: true, dueOn: true },
+      }),
     ]);
+    const assigned = new Map(assignments.map((row) => [row.courseId, dateOnly(row.dueOn)]));
+    const now = today();
 
     const completed = new Set(progress.filter((row) => row.completedAt).map((row) => row.lessonId));
     const passed = new Set(passedAttempts.map((row) => row.quizId));
@@ -445,6 +452,15 @@ export function learningRouter(services: Services): Router {
         enrolledAt: enrollment.createdAt.toISOString(),
         progress: courseProgress(done, lessonIds.length + quizIds.length),
         resumeLessonId: lessonIds.find((id) => !completed.has(id)) ?? lessonIds[0] ?? null,
+        assignment: assigned.has(enrollment.courseId)
+          ? (() => {
+              const dueOn = assigned.get(enrollment.courseId) ?? null;
+              return {
+                dueOn,
+                overdue: !enrollment.completedAt && dueOn !== null && dueOn < now,
+              };
+            })()
+          : null,
       };
       return { item, activity };
     });
@@ -452,6 +468,11 @@ export function learningRouter(services: Services): Router {
     // The course worked on most recently comes first: that is what "continue" means.
     items.sort((a, b) => b.activity - a.activity);
     res.json(items.map(({ item }) => item));
+  });
+
+  router.get('/transcript', requireAuth(services), async (req, res) => {
+    const context = auth(req);
+    res.json(await transcriptFor(context.db, context.userId, localeOf(req)));
   });
 
   router.get('/wishlist', requireAuth(services), async (req, res) => {

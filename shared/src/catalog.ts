@@ -161,5 +161,7 @@ export const learningItemSchema = z.object({
     percent: z.number().int(),
   }),
   resumeLessonId: z.string().nullable(),
+  /** Set when the organization assigned this course. */
+  assignment: z.object({ dueOn: z.string().nullable(), overdue: z.boolean() }).nullable(),
 });
 export type LearningItem = z.infer<typeof learningItemSchema>;

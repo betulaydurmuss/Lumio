@@ -14,6 +14,8 @@ export type AuditAction =
   | 'session.revoked'
   | 'totp.enabled'
   | 'course.enrolled'
+  | 'course.assigned'
+  | 'assignment.removed'
   | 'course.completed'
   | 'certificate.issued'
   | 'certificate.revoked'

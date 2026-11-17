@@ -1,8 +1,10 @@
 import {
+  assignCourseSchema,
   changeRoleSchema,
   INVITATION_TTL_DAYS,
   inviteSchema,
   localeSchema,
+  type AssignResult,
   type AuditEntry,
   type Invitation,
   type Member,
@@ -13,7 +15,8 @@ import { Router, type Request } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { audit } from '../audit.js';
-import { invitationMail } from '../mail/templates.js';
+import { assignmentReport, csvCell, transcriptFor } from '../learning/report.js';
+import { assignmentMail, invitationMail } from '../mail/templates.js';
 import {
   auth,
   requireAuth,
@@ -314,6 +317,171 @@ export function orgRouter(services: Services): Router {
       ipAddress: req.ip,
     });
     res.status(204).end();
+  });
+
+  // Assignments send mail as well, one per member.
+  const assignLimiter = rateLimit({
+    windowMs: 60 * 60_000,
+    limit: 30,
+    keyGenerator: (req: Request) => req.auth?.userId ?? 'anonymous',
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (_req, _res, next) =>
+      next(new HttpError(429, 'rate_limited', 'Too many assignments, try again later')),
+  });
+
+  /**
+   * Assigns a course to members of this organization. Each one is enrolled at
+   * once, so the course is waiting in their list, and gets a mail. Assigning
+   * again is harmless: members who already have it are counted, not changed.
+   */
+  router.post('/assignments', assignLimiter, async (req, res) => {
+    const context = auth(req);
+    const input = assignCourseSchema.parse(req.body);
+    const course = await services.prisma.course.findFirst({
+      where: { slug: input.courseSlug, status: 'published' },
+    });
+    if (!course) throw new HttpError(404, 'not_found', 'Course not found');
+    if (course.priceAmount > 0) {
+      // Paid courses need seats from a purchase, which arrives with payments.
+      throw new HttpError(402, 'payment_required', 'Only free courses can be assigned for now');
+    }
+
+    // Read through the tenant scope: an id from another organization is simply not found.
+    const ids = [...new Set(input.userIds)];
+    const members = await context.db.user.findMany({
+      where: { id: { in: ids }, disabledAt: null },
+    });
+    if (members.length !== ids.length) {
+      throw new HttpError(404, 'member_not_found', 'Some members were not found or are inactive');
+    }
+
+    const dueOn = input.dueOn ? new Date(`${input.dueOn}T00:00:00Z`) : null;
+    const created = await context.db.assignment.createManyAndReturn({
+      data: ids.map((userId) => ({
+        orgId: context.orgId,
+        userId,
+        courseId: course.id,
+        assignedById: context.userId,
+        dueOn,
+      })),
+      skipDuplicates: true,
+      select: { id: true, userId: true },
+    });
+    const enrolled = await context.db.enrollment.createMany({
+      data: created.map((row) => ({
+        orgId: context.orgId,
+        userId: row.userId,
+        courseId: course.id,
+      })),
+      skipDuplicates: true,
+    });
+    if (enrolled.count > 0) {
+      await services.prisma.course.update({
+        where: { id: course.id },
+        data: { enrollmentCount: { increment: enrolled.count } },
+      });
+    }
+
+    const assignedTo = new Set(created.map((row) => row.userId));
+    for (const member of members.filter((m) => assignedTo.has(m.id))) {
+      await services.mailer.send(
+        assignmentMail({
+          to: member.email,
+          courseTitle: member.locale === 'tr' ? course.titleTr : course.titleEn,
+          dueOn: input.dueOn,
+          link: `${services.webOrigin}/learn/${course.slug}`,
+          locale: member.locale,
+        }),
+      );
+    }
+    if (created.length > 0) {
+      await audit(context.db, {
+        orgId: context.orgId,
+        actorId: context.userId,
+        action: 'course.assigned',
+        targetType: 'course',
+        targetId: course.id,
+        ipAddress: req.ip,
+        metadata: { members: created.length, dueOn: input.dueOn },
+      });
+    }
+    const body: AssignResult = {
+      assigned: created.length,
+      alreadyAssigned: ids.length - created.length,
+    };
+    res.status(201).json(body);
+  });
+
+  router.get('/assignments', async (req, res) => {
+    const { db } = auth(req);
+    const locale = localeSchema.catch('tr').parse(req.query.locale);
+    res.json(await assignmentReport(db, locale));
+  });
+
+  /** The same report as a spreadsheet, for compliance records. */
+  router.get('/assignments.csv', async (req, res) => {
+    const { db } = auth(req);
+    const locale = localeSchema.catch('tr').parse(req.query.locale);
+    const rows = await assignmentReport(db, locale);
+    const header = [
+      'name',
+      'email',
+      'course',
+      'assigned_at',
+      'due_on',
+      'status',
+      'percent',
+      'completed_at',
+    ];
+    const lines = [
+      header.map(csvCell).join(','),
+      ...rows.map((row) =>
+        [
+          row.member.displayName,
+          row.member.email,
+          row.course.title,
+          row.assignedAt.slice(0, 10),
+          row.dueOn,
+          row.status,
+          row.percent,
+          row.completedAt?.slice(0, 10) ?? null,
+        ]
+          .map(csvCell)
+          .join(','),
+      ),
+    ];
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="lumio-assignments.csv"');
+    // A byte-order mark so spreadsheet programs read Turkish letters correctly.
+    res.send(`\uFEFF${lines.join('\r\n')}\r\n`);
+  });
+
+  /** Takes an assignment back. What the member already did, and the enrollment, stay. */
+  router.delete('/assignments/:id', async (req, res) => {
+    const context = auth(req);
+    const id = idParam.parse(req.params.id);
+    const { count } = await context.db.assignment.deleteMany({ where: { id } });
+    if (count === 0) throw new HttpError(404, 'not_found', 'Assignment not found');
+    await audit(context.db, {
+      orgId: context.orgId,
+      actorId: context.userId,
+      action: 'assignment.removed',
+      targetType: 'assignment',
+      targetId: id,
+      ipAddress: req.ip,
+    });
+    res.status(204).end();
+  });
+
+  router.get('/members/:id/transcript', async (req, res) => {
+    const { db } = auth(req);
+    const id = idParam.parse(req.params.id);
+    const locale = localeSchema.catch('tr').parse(req.query.locale);
+    if (!(await db.user.findUnique({ where: { id } }))) {
+      throw new HttpError(404, 'not_found', 'Member not found');
+    }
+    res.json(await transcriptFor(db, id, locale));
   });
 
   router.get('/audit-logs', async (req, res) => {

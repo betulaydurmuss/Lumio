@@ -61,6 +61,44 @@ export function passwordResetMail(params: { to: string; link: string; locale: Lo
   return { to: params.to, subject: t.subject, text, html };
 }
 
+const assignmentCopy = {
+  tr: {
+    subject: (course: string) => `Yeni eğitim: ${course}`,
+    body: (course: string) => `Kurumun sana Lumio'da "${course}" eğitimini atadı.`,
+    due: (date: string) => `Son tarih: ${date}.`,
+    open: 'Eğitime başlamak için aşağıdaki bağlantıyı aç ve Lumio hesabınla giriş yap.',
+  },
+  en: {
+    subject: (course: string) => `New training: ${course}`,
+    body: (course: string) => `Your organization assigned you "${course}" on Lumio.`,
+    due: (date: string) => `Due date: ${date}.`,
+    open: 'Open the link below and sign in with your Lumio account to start.',
+  },
+} as const;
+
+/**
+ * Tells a member a course was assigned to them. Only the catalog's own course
+ * title and the date appear: nothing an admin typed travels in this mail.
+ */
+export function assignmentMail(params: {
+  to: string;
+  courseTitle: string;
+  dueOn: string | null;
+  link: string;
+  locale: Locale;
+}): MailJob {
+  const t = assignmentCopy[params.locale];
+  const lines = [
+    t.body(params.courseTitle),
+    ...(params.dueOn ? [t.due(params.dueOn)] : []),
+    t.open,
+  ];
+  const text = [...lines, '', params.link].join('\n');
+  const html = `${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('\n')}
+<p><a href="${escapeHtml(params.link)}">${escapeHtml(params.link)}</a></p>`;
+  return { to: params.to, subject: t.subject(params.courseTitle), text, html };
+}
+
 const invitationCopy = {
   tr: {
     subject: (org: string) => `${org} seni Lumio'ya davet ediyor`,
