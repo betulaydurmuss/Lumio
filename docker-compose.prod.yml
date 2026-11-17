@@ -1,0 +1,66 @@
+# Production overlay, used together with docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Adds Caddy in front of the web container for HTTPS (certificates are fetched
+# and renewed automatically), sends mail through a real SMTP relay instead of
+# Mailpit, and publishes nothing but ports 80 and 443. See docs/deploy.md.
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env, e.g. lumio.example.com}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_started
+
+  web:
+    restart: unless-stopped
+    # Reached only through Caddy.
+    ports: !reset []
+
+  api:
+    restart: unless-stopped
+    environment:
+      WEB_ORIGIN: https://${DOMAIN:?set DOMAIN in .env}
+      # Caddy, then nginx: the client's address is two hops back.
+      TRUST_PROXY_HOPS: 2
+
+  worker:
+    restart: unless-stopped
+    environment:
+      SMTP_HOST: ${RELAY_SMTP_HOST:?set RELAY_SMTP_HOST in .env}
+      SMTP_PORT: ${RELAY_SMTP_PORT:-587}
+      SMTP_USER: ${RELAY_SMTP_USER:?set RELAY_SMTP_USER in .env}
+      SMTP_PASSWORD: ${RELAY_SMTP_PASSWORD:?set RELAY_SMTP_PASSWORD in .env}
+      MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM in .env}
+    depends_on: !override
+      redis:
+        condition: service_healthy
+
+  # Only the app talks to these; nothing is published on the host.
+  postgres:
+    restart: unless-stopped
+    ports: !reset []
+
+  redis:
+    restart: unless-stopped
+    ports: !reset []
+
+  # Development only: real mail goes through the relay above.
+  mailpit:
+    profiles: ['dev']
+
+volumes:
+  caddy-data:
+  caddy-config:

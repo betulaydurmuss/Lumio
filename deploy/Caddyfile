@@ -1,0 +1,13 @@
+# TLS in front of Lumio. Caddy obtains and renews the certificate for $DOMAIN
+# on its own and redirects plain HTTP to HTTPS.
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		# Browsers keep to HTTPS for a year once they have seen this.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy web:8080
+}

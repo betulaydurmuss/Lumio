@@ -110,6 +110,16 @@ jobs:
       # Fresh random secrets for this run only, made the same way as locally.
       - run: node scripts/create-env.mjs
 
+      # The production overlay is not started here, but it must stay valid.
+      - name: Check the production overlay
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+        env:
+          DOMAIN: lumio.example.com
+          RELAY_SMTP_HOST: smtp.example.com
+          RELAY_SMTP_USER: ci
+          RELAY_SMTP_PASSWORD: ci
+          MAIL_FROM: Lumio <no-reply@example.com>
+
       - name: Start the stack from a clean checkout
         run: docker compose up -d --build --wait web worker
 
