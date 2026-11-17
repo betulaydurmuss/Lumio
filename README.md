@@ -67,18 +67,24 @@ anything of the other's. Turning the scope off makes those tests fail.
   when a sign-in completes, so entering the password again does not buy more guesses at the code.
 - A forgotten password is reset through a one-hour, single-use link sent to the account's address.
   A reset signs out every device and opens a locked account, so nobody can keep an owner out by
-  locking their account on purpose.
+  locking their account on purpose. A half-finished sign-in begun with the old password is void.
+- Verifying an email address takes the link and the password chosen at sign-up, so a stranger who
+  typed someone else's address cannot have the owner activate it for them.
+- Turning on two-factor authentication hands out ten single-use recovery codes, shown once and
+  stored as hashes. They are the way back in when the phone is lost; a password reset alone never
+  removes the second factor.
 
 ### Security review
 
-The code was reviewed by tracing each entry point to the data it reaches, looking for ways around
-the guarantees above. Every lead was first turned into a test that failed, then fixed, and the
-test now guards the fix. What was found and changed:
+The code was reviewed twice by tracing each entry point to the data it reaches, looking for ways
+around the guarantees above. The second review ran the leads against the code in an isolated
+container. Every lead was first turned into a test that failed, then fixed, and the test now
+guards the fix. What was found and changed:
 
 | Lead                                                                              | Fix                                                                                               |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | An admin who was demoted kept their pending admin invitations and could come back | Demoting or deactivating revokes their invitations; accepting checks the sender is still an admin |
-| An unverified sign-up could hold someone else's address indefinitely              | It gives way after a day, to an invitation, or to a password reset by the mailbox owner           |
+| An unverified sign-up could hold someone else's address                           | A newer sign-up, an invitation or a reset replaces it; verifying needs the registrant's password  |
 | Re-entering the password reset the counter for code guesses                       | The counter resets only after the whole sign-in succeeds                                          |
 | Guesses sent together were counted as one                                         | Each attempt is taken from the counter atomically, before it is checked                           |
 | Anyone could keep an account locked                                               | The owner can reset the password, which opens the account                                         |
@@ -86,10 +92,13 @@ test now guards the fix. What was found and changed:
 | Concurrent final exam attempts could exceed three a day                           | The count and the new attempt are one locked step                                                 |
 | Two admins demoting each other at once could leave nobody in charge               | Membership changes in an organization run one at a time                                           |
 | Names could carry line breaks into emails                                         | Names refuse control characters                                                                   |
-| Drawing a certificate held up every other request for up to a second              | Images are drawn on a background thread and kept in memory                                        |
+| Drawing a certificate held up every other request for up to a second              | PNG and PDF are drawn on a worker thread and kept in memory                                       |
 | Popular searches could carry words no course was matched on                       | Only the words a search was matched on are remembered                                             |
 | A video could be marked watched at once by sending its end position               | The server also checks how long ago the video was started                                         |
 | A refresh token presented twice at once worked twice                              | Rotation is conditional, so it works once                                                         |
+| The verification mail repeated the name typed at sign-up                          | That mail carries no text from the registrant                                                     |
+| A sign-in begun with the old password could still finish after a reset            | The pending step carries a fingerprint of the password it was won with                            |
+| Running the demo seed again republished a course the operator had taken down      | The seed leaves an existing course's status alone                                                 |
 
 Smaller changes from the same review: tokens and verification codes are kept out of API and
 nginx access logs, a media link cannot claim a lifetime longer than the server ever signs,
@@ -97,8 +106,11 @@ malformed or oversized request bodies get a 400 or 413 rather than a 500, Redis 
 password, and static assets keep the security headers.
 
 Still open, and known: the rate limiters keep their counts in each API process, so several
-processes need a shared store; HSTS belongs on whichever proxy terminates TLS; and the first
-download of each certificate PDF is still assembled on the main thread.
+processes need a shared store; HSTS belongs on whichever proxy terminates TLS; an invitation mail
+still names the inviting organization and admin, which only a verified admin with two-factor
+authentication can set. Sign-in lockout and session handling were left out of the second review
+by the reviewing tool's own limits; the tests in [api/test/auth.test.ts](api/test/auth.test.ts)
+cover them instead.
 
 ## What is stored, and what is never stored
 
