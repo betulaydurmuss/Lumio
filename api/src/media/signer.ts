@@ -45,7 +45,11 @@ export class MediaSigner {
       if (typeof k !== 'string' || typeof e !== 'number' || !isValidMediaKey(k)) {
         return { error: 'invalid' };
       }
-      if (e < Math.floor(now / 1000)) return { error: 'expired' };
+      const nowSeconds = Math.floor(now / 1000);
+      // The server never signs a link for longer than this, so one that claims
+      // to last longer was not made by it, whatever its signature says.
+      if (e > nowSeconds + MEDIA_LINK_TTL_SECONDS + 60) return { error: 'invalid' };
+      if (e < nowSeconds) return { error: 'expired' };
       return { key: k };
     } catch {
       return { error: 'invalid' };

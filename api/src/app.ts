@@ -5,7 +5,7 @@ import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import { randomUUID } from 'node:crypto';
 import { pinoHttp } from 'pino-http';
-import type { Logger } from './logger.js';
+import { redactUrl, type Logger } from './logger.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { authRouter, type AuthRouterOptions } from './routes/auth.js';
@@ -40,6 +40,16 @@ export function createApp(deps: AppDeps): Express {
         const id = randomUUID();
         res.setHeader('X-Request-Id', id);
         return id;
+      },
+      // Only what an operator needs; query and params are left out because they can
+      // carry tokens, and the URL itself goes through redactUrl.
+      serializers: {
+        req: (req: { id: unknown; method: string; url: string; remoteAddress?: string }) => ({
+          id: req.id,
+          method: req.method,
+          url: redactUrl(req.url),
+          remoteAddress: req.remoteAddress,
+        }),
       },
     }),
   );
