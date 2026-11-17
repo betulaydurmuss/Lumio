@@ -1,6 +1,16 @@
 import { z } from 'zod';
 
-const secret = (name: string) => z.string().min(32, `${name} must be at least 32 characters`);
+// Values that appear in this repository's examples. A server started with one of
+// them would sign tokens with a key anyone can read on GitHub.
+const PLACEHOLDER = /change-me/i;
+
+const secret = (name: string) =>
+  z
+    .string()
+    .min(32, `${name} must be at least 32 characters`)
+    .refine((value) => !PLACEHOLDER.test(value), {
+      message: `${name} is still the example value; generate a real secret`,
+    });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -9,9 +19,14 @@ const envSchema = z.object({
   COOKIE_SECRET: secret('COOKIE_SECRET'),
   ACCESS_TOKEN_SECRET: secret('ACCESS_TOKEN_SECRET'),
   /** 32 bytes, base64. Encrypts secrets stored in the database, such as TOTP seeds. */
-  ENCRYPTION_KEY: z.string().refine((value) => Buffer.from(value, 'base64').length === 32, {
-    message: 'ENCRYPTION_KEY must be 32 bytes encoded as base64',
-  }),
+  ENCRYPTION_KEY: z
+    .string()
+    .refine((value) => Buffer.from(value, 'base64').length === 32, {
+      message: 'ENCRYPTION_KEY must be 32 bytes encoded as base64',
+    })
+    .refine((value) => Buffer.from(value, 'base64').some((byte) => byte !== 0), {
+      message: 'ENCRYPTION_KEY is the all-zero example key; generate a real one',
+    }),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   /** Where lesson media is read from. Defaults to api/media. */

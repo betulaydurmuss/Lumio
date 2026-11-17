@@ -1,11 +1,12 @@
-# Local development stack. Every value has a development default so that
-# `docker compose up` works on a clean clone; override them in .env.
-# These defaults are for local use only and must never reach production.
+# Local development stack. Ports, names and the database password have
+# development defaults; override them in .env. Secrets have none: they come
+# from .env (`npm run env:init` writes one with fresh random values), so the
+# stack never runs on a value that is published in this repository.
 
 x-app-env: &app-env
   NODE_ENV: production
   DATABASE_URL: postgresql://${POSTGRES_USER:-lumio}:${POSTGRES_PASSWORD:-lumio}@postgres:5432/${POSTGRES_DB:-lumio}?schema=public
-  REDIS_URL: redis://redis:6379
+  REDIS_URL: redis://:${REDIS_PASSWORD:?run npm run env:init, or set REDIS_PASSWORD in .env}@redis:6379
   LOG_LEVEL: ${LOG_LEVEL:-info}
 
 services:
@@ -27,13 +28,24 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ['redis-server', '--appendonly', 'yes']
+    # Sessions, rate limits and the job queue live here, so it asks for a password
+    # even though the port is only published on localhost.
+    command:
+      [
+        'redis-server',
+        '--appendonly',
+        'yes',
+        '--requirepass',
+        '${REDIS_PASSWORD:?run npm run env:init, or set REDIS_PASSWORD in .env}',
+      ]
     ports:
       - '127.0.0.1:${REDIS_PORT:-6380}:6379'
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?run npm run env:init, or set REDIS_PASSWORD in .env}
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
       interval: 5s
       timeout: 3s
       retries: 20
@@ -63,9 +75,9 @@ services:
       <<: *app-env
       API_PORT: 4000
       WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
-      COOKIE_SECRET: ${COOKIE_SECRET:-local-development-only-cookie-secret-0123456789}
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:-local-development-only-access-token-secret-01234}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-bG9jYWwtZGV2ZWxvcG1lbnQtb25seS1rZXktMDAwMDA=}
+      COOKIE_SECRET: ${COOKIE_SECRET:?run npm run env:init, or set COOKIE_SECRET in .env}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:?run npm run env:init, or set ACCESS_TOKEN_SECRET in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?run npm run env:init, or set ENCRYPTION_KEY in .env}
     depends_on:
       migrate:
         condition: service_completed_successfully

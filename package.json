@@ -19,6 +19,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "env:init": "node scripts/create-env.mjs",
     "db:migrate": "npm run db:migrate --workspace api",
     "db:seed": "npm run db:seed --workspace api",
     "format": "prettier --write .",
