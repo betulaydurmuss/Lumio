@@ -205,6 +205,22 @@ npm run admin:promote -w api -- someone@example.com
 docker compose run --rm migrate npx tsx scripts/make-platform-admin.ts someone@example.com
 ```
 
+## Supply chain
+
+Every push and pull request runs, besides the build and tests:
+
+| Check                                     | What it catches                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| `npm audit --omit=dev --audit-level=high` | A known high or critical advisory in a production dependency        |
+| gitleaks over the whole git history       | A secret committed at any point, even if a later commit removed it  |
+| CodeQL, `security-extended` queries       | Injection, unsafe redirects, path traversal and similar in the code |
+| `npm sbom` (CycloneDX)                    | Nothing by itself: it records exactly what each build shipped       |
+
+Every GitHub Action is pinned to a commit, not a tag, so a moved tag cannot change what runs.
+`package-lock.json` is committed, CI installs with `npm ci`, and npm's `allowScripts` list in
+`package.json` names the only packages allowed to run install scripts. Dependabot watches npm,
+Actions and the Docker images and raises alerts; updates are reviewed and committed by hand.
+
 ## Repository layout
 
 ```
