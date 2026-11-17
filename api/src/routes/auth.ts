@@ -22,7 +22,7 @@ import {
 } from '@lumio/shared';
 import { Router, type Request, type Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { randomBytes } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { audit } from '../audit.js';
 import {
   CHALLENGE_COOKIE,
@@ -230,7 +230,9 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     db: Pick<typeof prisma, 'user' | 'organization'>,
     user: { id: string; orgId: string },
   ) {
-    await db.user.delete({ where: { id: user.id } });
+    // Conditional: if the address was verified in the meantime, nothing goes.
+    const { count } = await db.user.deleteMany({ where: { id: user.id, emailVerifiedAt: null } });
+    if (count === 0) return;
     if ((await db.user.count({ where: { orgId: user.orgId } })) === 0) {
       await db.organization.delete({ where: { id: user.orgId } });
     }
@@ -242,12 +244,22 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     return fresh && (await verifyTotp(secret, code));
   }
 
+  /**
+   * Recovery codes are stored as an HMAC under a server key rather than a plain
+   * hash: someone holding only a database dump cannot test guesses offline.
+   */
+  function recoveryHash(code: string) {
+    return createHmac('sha256', services.encryptionKey)
+      .update(`lumio-recovery:${code.replace('-', '')}`)
+      .digest('base64url');
+  }
+
   /** Spends one recovery code. One statement, so the same code cannot be spent twice at once. */
   async function useRecoveryCode(userId: string, code: string) {
     const spent = await prisma.$executeRaw`
       UPDATE users
-         SET totp_recovery_codes = array_remove(totp_recovery_codes, ${hashToken(code)})
-       WHERE id = ${userId}::uuid AND ${hashToken(code)} = ANY(totp_recovery_codes)`;
+         SET totp_recovery_codes = array_remove(totp_recovery_codes, ${recoveryHash(code)})
+       WHERE id = ${userId}::uuid AND ${recoveryHash(code)} = ANY(totp_recovery_codes)`;
     return spent === 1;
   }
 
@@ -265,13 +277,39 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
 
     // Hash first so an existing address costs the same time as a new one.
     const passwordHash = await hashPassword(input.password);
-    let existing = await prisma.user.findUnique({ where: { email: input.email } });
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+
     if (existing && !existing.emailVerifiedAt) {
-      // Nobody has proved this address yet, so the newest sign-up replaces the
-      // old one. A stranger's sign-up cannot hold it: their link also needs
-      // their password, and the owner can simply sign up again.
-      await forgetUnverified(prisma, existing);
-      existing = null;
+      // Nobody has proved this address yet. This sign-up does not replace the
+      // earlier one, which would void links its owner may already hold; it gets
+      // a link of its own carrying its details, and whoever opens a link with
+      // the password that went with it takes the address.
+      const token = randomToken();
+      await prisma.emailVerification.create({
+        data: {
+          userId: existing.id,
+          tokenHash: hashToken(token),
+          expiresAt: new Date(Date.now() + VERIFICATION_TTL_HOURS * 3_600_000),
+          pendingPasswordHash: passwordHash,
+          pendingDisplayName: input.displayName,
+          pendingLocale: input.locale,
+          pendingAccountType: input.accountType,
+          pendingOrganizationName:
+            input.accountType === 'company' ? (input.organizationName ?? null) : null,
+          pendingMarketingConsent: input.marketingConsent,
+        },
+      });
+      await audit(prisma, {
+        orgId: existing.orgId,
+        actorId: existing.id,
+        action: 'user.registered',
+        ipAddress: req.ip,
+        metadata: { accountType: input.accountType, pending: true },
+      });
+      const link = `${services.webOrigin}/verify-email?token=${encodeURIComponent(token)}`;
+      await services.mailer.send(
+        verificationMail({ to: existing.email, link, locale: input.locale }),
+      );
     }
 
     if (!existing) {
@@ -346,17 +384,74 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     if (!record || record.usedAt || record.expiresAt < new Date()) {
       throw new HttpError(400, 'invalid_token', 'This link is invalid or has expired');
     }
-    // The mailbox owner may be opening a link from a sign-up they never made.
-    if (!(await verifyPassword(record.user.passwordHash, password))) {
+    // The mailbox owner may be opening a link from a sign-up they never made:
+    // each link only works with the password chosen in the sign-up that sent it.
+    const pending = record.pendingPasswordHash !== null;
+    const expected = pending ? record.pendingPasswordHash : record.user.passwordHash;
+    if (!(await verifyPassword(expected, password))) {
       throw invalidCredentials();
     }
-    await prisma.$transaction([
-      prisma.emailVerification.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-      prisma.user.update({
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      // Conditional, so a link opened twice at once only works once.
+      const claimed = await tx.emailVerification.updateMany({
+        where: { id: record.id, usedAt: null },
+        data: { usedAt: now },
+      });
+      if (claimed.count === 0) {
+        throw new HttpError(400, 'invalid_token', 'This link is invalid or has expired');
+      }
+      if (!record.user.emailVerifiedAt) {
+        // The address is proved now; every other sign-up's link is spent.
+        await tx.emailVerification.updateMany({
+          where: { userId: record.userId, usedAt: null },
+          data: { usedAt: now },
+        });
+      }
+      if (pending && !record.user.emailVerifiedAt) {
+        // This sign-up takes over the account: consents given with the earlier
+        // one belong to whoever made it, not to the person proving the address.
+        await tx.consentRecord.deleteMany({ where: { userId: record.userId } });
+      }
+      if (pending) {
+        const company = record.pendingAccountType === 'company';
+        await tx.organization.update({
+          where: { id: record.user.orgId },
+          data: {
+            name:
+              company && record.pendingOrganizationName
+                ? record.pendingOrganizationName
+                : (record.pendingDisplayName ?? record.user.displayName),
+            kind: record.pendingAccountType ?? 'personal',
+          },
+        });
+        await tx.user.update({
+          where: { id: record.userId },
+          data: {
+            passwordHash: record.pendingPasswordHash,
+            displayName: record.pendingDisplayName ?? record.user.displayName,
+            locale: record.pendingLocale ?? record.user.locale,
+            role: company ? 'org_admin' : 'learner',
+          },
+        });
+      }
+      if (!record.user.emailVerifiedAt && (pending ? record.pendingMarketingConsent : false)) {
+        await tx.consentRecord.create({
+          data: {
+            orgId: record.user.orgId,
+            userId: record.userId,
+            kind: 'marketing_email',
+            granted: true,
+            noticeVersion: PRIVACY_NOTICE_VERSION,
+            ipAddress: req.ip ?? null,
+          },
+        });
+      }
+      await tx.user.update({
         where: { id: record.userId },
-        data: { emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
-      }),
-    ]);
+        data: { emailVerifiedAt: record.user.emailVerifiedAt ?? now },
+      });
+    });
     await audit(prisma, {
       orgId: record.user.orgId,
       actorId: record.userId,
@@ -434,6 +529,15 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
           emailVerifiedAt: record.user.emailVerifiedAt ?? now,
         },
       });
+      if (!record.user.emailVerifiedAt) {
+        // The mailbox owner is taking the address back from a sign-up they did
+        // not make: its consents and any other pending sign-up go with it.
+        await tx.consentRecord.deleteMany({ where: { userId: record.userId } });
+        await tx.emailVerification.updateMany({
+          where: { userId: record.userId, usedAt: null },
+          data: { usedAt: now },
+        });
+      }
       // Whoever knew the old password, or held a session, is out.
       await tx.session.updateMany({
         where: { userId: record.userId, revokedAt: null },
@@ -473,9 +577,9 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
     }
     // Same answer as a wrong password: a deactivated account reveals nothing new.
     if (user.disabledAt) throw invalidCredentials();
-    if (!user.emailVerifiedAt) {
-      throw new HttpError(403, 'email_not_verified', 'Verify your email address first');
-    }
+    // The same answer as a wrong password. A distinct one would let anyone who
+    // plants a password with a sign-up learn whether the address is taken.
+    if (!user.emailVerifiedAt) throw invalidCredentials();
 
     let result: LoginResult;
     if (user.totpEnabledAt) {
@@ -726,7 +830,7 @@ export function authRouter(services: Services, options: AuthRouterOptions = {}):
       where: { id: user.id },
       data: {
         totpEnabledAt: new Date(),
-        totpRecoveryCodes: recoveryCodes.map((code) => hashToken(code.replace('-', ''))),
+        totpRecoveryCodes: recoveryCodes.map(recoveryHash),
       },
     });
     // This session just proved the second factor; every other one has to prove it again.

@@ -57,7 +57,7 @@
     "back": "Back"
   },
   "errors": {
-    "invalid_credentials": "The email or password is wrong, or the account is temporarily locked. After several failed attempts the account locks for 15 minutes; resetting the password opens it at once.",
+    "invalid_credentials": "The email or password is wrong, the address is not verified yet, or the account is temporarily locked. After several failed attempts it locks for 15 minutes; resetting the password opens it at once.",
     "email_not_verified": "Verify your email address before signing in. Check your inbox.",
     "disposable_email": "Temporary email addresses are not accepted. Use a permanent address.",
     "invalid_token": "This link is invalid or has expired.",

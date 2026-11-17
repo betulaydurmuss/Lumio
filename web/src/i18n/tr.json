@@ -57,7 +57,7 @@
     "back": "Geri"
   },
   "errors": {
-    "invalid_credentials": "E-posta ya da şifre hatalı, veya hesap geçici olarak kilitli. Birkaç başarısız denemeden sonra hesap 15 dakika kilitlenir; şifreni yenilersen hemen açılır.",
+    "invalid_credentials": "E-posta ya da şifre hatalı, adres henüz doğrulanmamış ya da hesap geçici olarak kilitli. Birkaç başarısız denemeden sonra hesap 15 dakika kilitlenir; şifreni yenilersen hemen açılır.",
     "email_not_verified": "Giriş yapmadan önce e-posta adresini doğrulaman gerekiyor. Gelen kutunu kontrol et.",
     "disposable_email": "Geçici e-posta adresleri kabul edilmiyor. Kalıcı bir adres kullan.",
     "invalid_token": "Bu bağlantı geçersiz ya da süresi dolmuş.",

@@ -106,6 +106,16 @@ model EmailVerification {
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
+  /// A later sign-up for an address nobody has proved yet. Its details wait here,
+  /// on its own link, and replace the account's only if this link is opened with
+  /// this password. Earlier sign-ups and their links stay untouched.
+  pendingPasswordHash     String?           @map("pending_password_hash")
+  pendingDisplayName      String?           @map("pending_display_name")
+  pendingLocale           Locale?           @map("pending_locale")
+  pendingAccountType      OrganizationKind? @map("pending_account_type")
+  pendingOrganizationName String?           @map("pending_organization_name")
+  pendingMarketingConsent Boolean           @default(false) @map("pending_marketing_consent")
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

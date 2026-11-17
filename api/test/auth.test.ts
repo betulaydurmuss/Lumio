@@ -61,8 +61,9 @@ describe('registration and email verification', () => {
     expect(ctx.mailer.sent[0]?.subject).toBe('Lumio hesabını doğrula');
 
     const early = await client.post('/api/auth/login', { email, password: PASSWORD });
-    expect(early.status).toBe(403);
-    expect(early.body.error.code).toBe('email_not_verified');
+    // The same answer as a wrong password: see "does not reveal" below.
+    expect(early.status).toBe(401);
+    expect(early.body.error.code).toBe('invalid_credentials');
 
     const verified = await client.post('/api/auth/verify-email', {
       token: ctx.mailer.tokenFor(email),
@@ -105,7 +106,66 @@ describe('registration and email verification', () => {
     const row = await ctx.prisma.user.findUniqueOrThrow({ where: { email } });
     expect(row.emailVerifiedAt).toBeNull();
     const login = await stranger.post('/api/auth/login', { email, password: OTHER_PASSWORD });
-    expect(login.body.error.code).toBe('email_not_verified');
+    expect(login.body.error.code).toBe('invalid_credentials');
+  });
+
+  it("keeps the owner's own verification link working when a stranger signs up after them", async () => {
+    const email = uniqueEmail('owner');
+    const owner = await new Client(ctx.app).init();
+    await owner.post('/api/auth/register', registration(email));
+    const ownerToken = ctx.mailer.tokenFor(email);
+
+    const stranger = await new Client(ctx.app).init();
+    await stranger.post('/api/auth/register', registration(email, { password: OTHER_PASSWORD }));
+
+    const verified = await owner.post('/api/auth/verify-email', {
+      token: ownerToken,
+      password: PASSWORD,
+    });
+    expect(verified.status).toBe(200);
+    expect((await owner.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(200);
+    const late = await new Client(ctx.app).init();
+    expect((await late.post('/api/auth/login', { email, password: OTHER_PASSWORD })).status).toBe(
+      401,
+    );
+  });
+
+  it("keeps the owner's reset link working when a stranger signs up again", async () => {
+    const email = uniqueEmail('owner');
+    const stranger = await new Client(ctx.app).init();
+    await stranger.post('/api/auth/register', registration(email, { password: OTHER_PASSWORD }));
+    const owner = await new Client(ctx.app).init();
+    await owner.post('/api/auth/password/forgot', { email });
+    const resetToken = ctx.mailer.tokenFor(email);
+
+    await stranger.post('/api/auth/register', registration(email, { password: OTHER_PASSWORD }));
+
+    const reset = await owner.post('/api/auth/password/reset', {
+      token: resetToken,
+      password: PASSWORD,
+    });
+    expect(reset.status).toBe(200);
+    expect((await owner.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(200);
+  });
+
+  it("drops a stranger's consent when the owner's sign-up takes the address", async () => {
+    const email = uniqueEmail('owner');
+    const stranger = await new Client(ctx.app).init();
+    await stranger.post(
+      '/api/auth/register',
+      registration(email, { password: OTHER_PASSWORD, marketingConsent: true }),
+    );
+    const owner = await new Client(ctx.app).init();
+    await owner.post('/api/auth/register', registration(email, { displayName: 'Real Owner' }));
+    await owner.post('/api/auth/verify-email', {
+      token: ctx.mailer.tokenFor(email),
+      password: PASSWORD,
+    });
+    await owner.post('/api/auth/login', { email, password: PASSWORD });
+
+    const user = await ctx.prisma.user.findUniqueOrThrow({ where: { email } });
+    expect(user.displayName).toBe('Real Owner');
+    expect((await owner.get('/api/me/consents')).body.marketingEmail).toBe(false);
   });
 
   it('lets the owner sign up over a sign-up that is still waiting for verification', async () => {
@@ -214,6 +274,20 @@ describe('sign-in', () => {
     expect(after.lockedUntil).not.toBeNull();
     const fresh = await new Client(ctx.app).init();
     expect((await fresh.post('/api/auth/login', { email, password: PASSWORD })).status).toBe(401);
+  });
+
+  it('does not reveal through sign-up and sign-in whether an address has an account', async () => {
+    // Plant a password on two addresses, one of them taken, then try it on both.
+    const { email: taken } = await signedInUser(ctx);
+    const unknown = uniqueEmail('probe');
+    const probe = await new Client(ctx.app).init();
+    const answers = [];
+    for (const email of [taken, unknown]) {
+      await probe.post('/api/auth/register', registration(email, { password: OTHER_PASSWORD }));
+      const res = await probe.post('/api/auth/login', { email, password: OTHER_PASSWORD });
+      answers.push({ status: res.status, body: res.body });
+    }
+    expect(answers[1]).toEqual(answers[0]);
   });
 
   it('gives the same answer for an unknown address and a wrong password', async () => {
@@ -426,6 +500,24 @@ describe('getting an account back', () => {
     expect(
       (await stranger.post('/api/auth/login', { email, password: OTHER_PASSWORD })).status,
     ).toBe(401);
+  });
+
+  it("leaves none of a stranger's consents behind when the owner takes the address back", async () => {
+    const email = uniqueEmail('victim');
+    const stranger = await new Client(ctx.app).init();
+    await stranger.post('/api/auth/register', {
+      accountType: 'personal',
+      displayName: 'Someone Else',
+      email,
+      password: OTHER_PASSWORD,
+      locale: 'en',
+      marketingConsent: true,
+    });
+
+    expect((await resetPassword(email, PASSWORD)).status).toBe(200);
+    const owner = await new Client(ctx.app).init();
+    await owner.post('/api/auth/login', { email, password: PASSWORD });
+    expect((await owner.get('/api/me/consents')).body.marketingEmail).toBe(false);
   });
 
   it('opens a locked account again, so a stranger cannot keep its owner out', async () => {
