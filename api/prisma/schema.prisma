@@ -194,12 +194,14 @@ enum LessonType {
 }
 
 model Category {
-  id       String  @id @default(uuid()) @db.Uuid
-  slug     String  @unique
-  parentId String? @map("parent_id") @db.Uuid
-  nameTr   String  @map("name_tr")
-  nameEn   String  @map("name_en")
-  position Int     @default(0)
+  id       String    @id @default(uuid()) @db.Uuid
+  slug     String    @unique
+  parentId String?   @map("parent_id") @db.Uuid
+  nameTr   String    @map("name_tr")
+  nameEn   String    @map("name_en")
+  position Int       @default(0)
+  /// Set when the platform operator changes it; the demo seed then leaves it alone.
+  editedAt DateTime? @map("edited_at")
 
   parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
   children Category[] @relation("CategoryTree")
@@ -263,6 +265,8 @@ model Course {
   enrollmentCount Int          @default(0) @map("enrollment_count")
   completionCount Int          @default(0) @map("completion_count")
   publishedAt     DateTime?    @map("published_at")
+  /// Set when the platform operator edits the course; the demo seed then leaves its text alone.
+  editedAt        DateTime?    @map("edited_at")
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
 

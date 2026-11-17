@@ -24,16 +24,18 @@ export async function seedCatalog(prisma: PrismaClient) {
   const categoryNames = new Map<string, string>();
 
   async function upsertCategory(seed: CategorySeed, parentId: string | null, position: number) {
+    const existing = await prisma.category.findUnique({ where: { slug: seed.slug } });
     const row = await prisma.category.upsert({
       where: { slug: seed.slug },
       create: { slug: seed.slug, nameTr: seed.tr, nameEn: seed.en, parentId, position },
-      update: { nameTr: seed.tr, nameEn: seed.en, parentId, position },
+      // A category the operator renamed keeps its name.
+      update: existing?.editedAt ? {} : { nameTr: seed.tr, nameEn: seed.en, parentId, position },
     });
     categoryIds.set(seed.slug, row.id);
-    categoryNames.set(seed.slug, `${seed.tr} ${seed.en}`);
+    categoryNames.set(seed.slug, `${row.nameTr} ${row.nameEn}`);
     for (const [index, child] of (seed.children ?? []).entries()) {
       await upsertCategory(child, row.id, index);
-      categoryNames.set(child.slug, `${categoryNames.get(child.slug)} ${seed.tr} ${seed.en}`);
+      categoryNames.set(child.slug, `${categoryNames.get(child.slug)} ${row.nameTr} ${row.nameEn}`);
     }
   }
   for (const [index, category] of categories.entries()) await upsertCategory(category, null, index);
@@ -104,12 +106,14 @@ export async function seedCatalog(prisma: PrismaClient) {
 
     const { status: _status, publishedAt: _publishedAt, ...content } = data;
     // Real enrollments are counted on top of the demo figure, so an update leaves the count alone.
+    // A course the operator edited keeps its text, category and level.
+    const edited = (await prisma.course.findUnique({ where: { slug: seed.slug } }))?.editedAt;
     const course = await prisma.course.upsert({
       where: { slug: seed.slug },
       create: { slug: seed.slug, ...data, enrollmentCount: seed.enrollments },
       // Whether a course is on the catalog is the platform operator's call once
       // it exists, so running the seed again (every deploy does) leaves it alone.
-      update: content,
+      update: edited ? {} : content,
     });
 
     // Sections and lessons are matched by position, so learner progress keeps
