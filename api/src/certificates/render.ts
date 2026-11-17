@@ -1,4 +1,4 @@
-import { Resvg } from '@resvg/resvg-js';
+import { renderAsync } from '@resvg/resvg-js';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PDFDocument } from 'pdf-lib';
@@ -242,13 +242,16 @@ export async function renderSvg(view: CertificateView): Promise<string> {
 </svg>`;
 }
 
-/** A PNG of the certificate. 3508 px wide is A4 at 300 dpi; smaller widths are previews. */
-export function renderPng(svg: string, width = 3508): Buffer {
-  const resvg = new Resvg(svg, {
+/**
+ * A PNG of the certificate. 3508 px wide is A4 at 300 dpi; smaller widths are
+ * previews. Drawn on a background thread, so other requests keep moving.
+ */
+export async function renderPng(svg: string, width = 3508): Promise<Buffer> {
+  const image = await renderAsync(svg, {
     fitTo: { mode: 'width', value: width },
     font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: 'Poppins' },
   });
-  return resvg.render().asPng();
+  return image.asPng();
 }
 
 /** An A4 landscape PDF carrying the print-quality image and the certificate number. */
@@ -260,7 +263,7 @@ export async function renderPdf(svg: string, view: CertificateView): Promise<Uin
   pdf.setCreator('Lumio');
   pdf.setProducer('Lumio');
   pdf.setCreationDate(view.issuedAt);
-  const image = await pdf.embedPng(renderPng(svg));
+  const image = await pdf.embedPng(await renderPng(svg));
   const page = pdf.addPage([841.89, 595.28]);
   page.drawImage(image, { x: 0, y: 0, width: 841.89, height: 595.28 });
   return pdf.save();

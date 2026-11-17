@@ -12,6 +12,7 @@ import {
   resetDatabase,
   signedInAdmin,
   signedInUser,
+  startedWatchingEarlier,
   testPrisma,
   type Client,
   type TestContext,
@@ -36,12 +37,15 @@ async function completeCourse(client: Client): Promise<QuizResult> {
   const lessons = await ctx.prisma.lesson.findMany({
     where: { section: { course: { slug: COURSE } } },
   });
-  for (const lesson of lessons) {
-    await client.agent
-      .put(`/api/learn/${COURSE}/lessons/${lesson.id}/progress`)
+  const save = (lessonId: string, body: object) =>
+    client.agent
+      .put(`/api/learn/${COURSE}/lessons/${lessonId}/progress`)
       .set('x-csrf-token', client.csrf)
-      .send({ positionSeconds: 30, completed: true });
-  }
+      .send(body);
+  for (const lesson of lessons) await save(lesson.id, { positionSeconds: 0 });
+  const me = await client.get('/api/auth/me');
+  await startedWatchingEarlier(ctx.prisma, me.body.id);
+  for (const lesson of lessons) await save(lesson.id, { positionSeconds: 30, completed: true });
   const quizzes = await ctx.prisma.quiz.findMany({
     where: { course: { slug: COURSE } },
     include: { questions: { orderBy: { position: 'asc' } } },
@@ -176,6 +180,32 @@ describe('public verification', () => {
   });
 });
 
+/** The longest the event loop was blocked, in milliseconds, while `work` ran. */
+async function longestStall(work: () => Promise<unknown>): Promise<number> {
+  // A timer that should fire every 5 ms; the longest gap between two firings
+  // is how long the loop was held by something running on it.
+  let last = performance.now();
+  let longest = 0;
+  const probe = setInterval(() => {
+    const now = performance.now();
+    longest = Math.max(longest, now - last);
+    last = now;
+  }, 5);
+  try {
+    await work();
+  } finally {
+    clearInterval(probe);
+  }
+  return Math.max(longest, performance.now() - last);
+}
+
+function collect(res: request.Response, done: (error: Error | null, body: Buffer) => void) {
+  const stream = res as unknown as NodeJS.ReadableStream;
+  const chunks: Buffer[] = [];
+  stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+  stream.on('end', () => done(null, Buffer.concat(chunks)));
+}
+
 describe('documents', () => {
   it('serves the PNG and PDF only with the verification code', async () => {
     const { client } = await signedInUser(ctx);
@@ -201,6 +231,36 @@ describe('documents', () => {
       });
     expect(pdf.headers['content-type']).toBe('application/pdf');
     expect((pdf.body as Buffer).subarray(0, 4).toString()).toBe('%PDF');
+  });
+
+  it('draws a print-size certificate without holding up other requests', async () => {
+    // The links are public, so drawing one must not stall the whole API.
+    const { client } = await signedInUser(ctx);
+    const { certificate } = await issued(client);
+    const url = `/api/certificates/${certificate.certNo}/certificate.png?k=${certificate.verifyCode}&w=3508`;
+
+    let res: request.Response | undefined;
+    const stall = await longestStall(async () => {
+      res = await request(ctx.app).get(url).buffer(true).parse(collect);
+    });
+    expect(res!.status).toBe(200);
+    expect((res!.body as Buffer).length).toBeGreaterThan(100_000);
+    expect(stall).toBeLessThan(150);
+  });
+
+  it('draws a PDF once and serves the same file after that', async () => {
+    const { client } = await signedInUser(ctx);
+    const { certificate } = await issued(client);
+    const url = `/api/certificates/${certificate.certNo}/certificate.pdf?k=${certificate.verifyCode}`;
+    const download = () => request(ctx.app).get(url).buffer(true).parse(collect);
+
+    const first = await download();
+    let second: Awaited<ReturnType<typeof download>> | undefined;
+    const stall = await longestStall(async () => {
+      second = await download();
+    });
+    expect(stall).toBeLessThan(150);
+    expect(Buffer.compare(first.body as Buffer, second!.body as Buffer)).toBe(0);
   });
 
   it('cannot be turned into markup through a name', async () => {

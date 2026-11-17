@@ -14,6 +14,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { audit } from '../audit.js';
 import { issueCertificate, signedFields, verifyUrl } from '../certificates/issue.js';
+import { DocumentCache } from '../certificates/documents.js';
 import { renderPdf, renderPng, renderSvg } from '../certificates/render.js';
 import { canonicalPayload, SIGNATURE_ALGORITHM } from '../certificates/signing.js';
 import type { Certificate } from '../generated/prisma/client.js';
@@ -40,6 +41,7 @@ function codeMatches(certificate: Certificate, given: unknown): boolean {
 
 export function certificatesRouter(services: Services): Router {
   const router = Router();
+  const documents = new DocumentCache();
   const { prisma } = services;
   const keys = services.certificates;
 
@@ -120,25 +122,33 @@ export function certificatesRouter(services: Services): Router {
       verifyUrl: verifyUrl(services.webOrigin, certificate.certNo, certificate.verifyCode),
       revoked: Boolean(certificate.revokedAt),
     };
-    return { certificate, view, svg: await renderSvg(view) };
+    // Revoking changes what is drawn, so it is part of the name it is kept under.
+    const key = `${certificate.certNo}:${view.revoked ? 'revoked' : 'valid'}`;
+    return { certificate, view, key, svg: () => renderSvg(view) };
   }
 
   router.get('/:certNo/certificate.png', verifyLimiter, async (req, res) => {
-    const { certificate, svg } = await document(req);
+    const { certificate, key, svg } = await document(req);
     const requested = Number(req.query.w);
     const width = PREVIEW_WIDTHS.includes(requested) ? requested : 1600;
+    const png = await documents.get(`${key}:png:${width}`, async () =>
+      renderPng(await svg(), width),
+    );
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'private, max-age=600');
     res.setHeader('Content-Disposition', `inline; filename="${certificate.certNo}.png"`);
-    res.send(renderPng(svg, width));
+    res.send(png);
   });
 
   router.get('/:certNo/certificate.pdf', verifyLimiter, async (req, res) => {
-    const { certificate, view, svg } = await document(req);
+    const { certificate, view, key, svg } = await document(req);
+    const pdf = await documents.get(`${key}:pdf`, async () =>
+      Buffer.from(await renderPdf(await svg(), view)),
+    );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Cache-Control', 'private, max-age=600');
     res.setHeader('Content-Disposition', `attachment; filename="${certificate.certNo}.pdf"`);
-    res.send(Buffer.from(await renderPdf(svg, view)));
+    res.send(pdf);
   });
 
   router.post(

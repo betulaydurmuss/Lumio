@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 /** LMS-2026-000042: the year of issue and a number that is never reused. */
-export const CERT_NO_PATTERN = /^LMS-\d{4}-\d{6}$/;
+// Six digits at least; the sequence keeps counting past 999999.
+export const CERT_NO_PATTERN = /^LMS-\d{4}-\d{6,9}$/;
 
 export const certificateStatusSchema = z.enum(['valid', 'revoked', 'invalid']);
 export type CertificateStatus = z.infer<typeof certificateStatusSchema>;
