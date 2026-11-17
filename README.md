@@ -223,8 +223,8 @@ from their own organization with a reason, which is written to the audit log.
 
 ## Running an organization
 
-A company admin, once 2FA is on, has four tabs: an overview of the organization in numbers,
-members, certificates and the audit log.
+A company admin, once 2FA is on, has five tabs: an overview of the organization in numbers,
+members, assignments, certificates and the audit log.
 
 ![Managing members](docs/screenshots/admin.png)
 
@@ -237,6 +237,15 @@ members, certificates and the audit log.
   deactivated, so an organization can never lock itself out.
 - **Deactivation.** A deactivated member's sessions end at once, and signing in again gets the
   same answer as a wrong password. Reactivating restores the account as it was.
+
+- **Assignments.** An admin assigns a free course to chosen members, with an optional due date.
+  They are enrolled at once and told by mail, which carries only the catalog's course title and
+  the date. The report lists every assignment as not started, in progress, completed or overdue,
+  late ones first, and downloads as CSV for compliance records; cells that start like a formula
+  are defused so the file is safe to open in a spreadsheet.
+- **Transcripts.** Every learner has a printable transcript at `/transcript`: each course, its
+  length, when it was started and finished, and the certificate number. An admin can open a
+  member's transcript from the assignment report; another organization's members are not found.
 
 Every one of these actions is in the audit log.
 
