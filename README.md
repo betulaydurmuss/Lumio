@@ -106,7 +106,7 @@ malformed or oversized request bodies get a 400 or 413 rather than a 500, Redis 
 password, and static assets keep the security headers.
 
 Still open, and known: the rate limiters keep their counts in each API process, so several
-processes need a shared store; HSTS belongs on whichever proxy terminates TLS; an invitation mail
+processes need a shared store; and an invitation mail
 still names the inviting organization and admin, which only a verified admin with two-factor
 authentication can set. Sign-in lockout and session handling were left out of the second review
 by the reviewing tool's own limits; the tests in [api/test/auth.test.ts](api/test/auth.test.ts)
@@ -414,15 +414,28 @@ database on their own, so your development data is never touched.
 
 ## Deployment
 
-Not deployed yet. The live URL and a `curl /api/health` example will be recorded here once it is.
+Not deployed to a public address yet. Everything needed for it is in the repository and checked
+on every push:
+
+- [docker-compose.prod.yml](docker-compose.prod.yml) puts Caddy in front for HTTPS with automatic
+  certificates and HSTS, sends mail through a real SMTP relay, and publishes nothing but ports 80
+  and 443. CI validates the overlay on every push.
+- The API is told how many proxies stand in front of it (`TRUST_PROXY_HOPS`), so rate limits
+  and the audit log see the visitor's address rather than the proxy's.
+- [docs/deploy.md](docs/deploy.md) walks through a first start on a server, updates, backups and
+  a go-live checklist.
+
+Until then the stack is verified locally and in CI: `docker compose up` from a clean checkout,
+a health check through the web proxy, and a backup that is restored and compared table by table.
 
 ## Roadmap
 
-| Stage   | Scope                                                                                                                                 |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| MVP     | Setup and brand, secure sign-in and organizations, catalog, course page, lesson player, quizzes, verifiable certificates, admin panel |
-| Phase 2 | Learning paths, assignments and compliance reports, payments, instructor tools, notifications, course Q&A                             |
-| Phase 3 | Live classes, study assistant, advanced assessment, SSO / LTI / SCORM, white-label, gamification                                      |
+| Stage   | Scope                                                                                                                                                                         | Status |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| MVP     | Setup and brand, secure sign-in and organizations, catalog, course page, lesson player and files, quizzes, verifiable certificates, admin panel, KVKK, backups, accessibility | Done   |
+| Phase 2 | Assignments and compliance reports, notifications                                                                                                                             | Done   |
+| Phase 2 | Learning paths, payments, instructor tools, course Q&A                                                                                                                        | Next   |
+| Phase 3 | Live classes, study assistant, advanced assessment, SSO / LTI / SCORM, white-label, gamification                                                                              | Later  |
 
 ## License
 
