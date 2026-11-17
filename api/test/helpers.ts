@@ -74,7 +74,9 @@ export function buildServices(prisma: PrismaClient, mailer: FakeMailer, replay: 
   return services;
 }
 
-export function buildApp(options: { authRateLimit?: number } = {}): TestContext {
+export function buildApp(
+  options: { authRateLimit?: number; trustProxyHops?: number } = {},
+): TestContext {
   const prisma = testPrisma();
   const mailer = new FakeMailer();
   const replay = new MemoryReplayGuard();
@@ -85,6 +87,7 @@ export function buildApp(options: { authRateLimit?: number } = {}): TestContext 
     checks: { database: async () => true, redis: async () => true },
     services: buildServices(prisma, mailer, replay),
     auth: { rateLimit: options.authRateLimit ?? 10_000 },
+    ...(options.trustProxyHops === undefined ? {} : { trustProxyHops: options.trustProxyHops }),
   });
   return { app, prisma, mailer, replay };
 }

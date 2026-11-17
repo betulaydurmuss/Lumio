@@ -26,6 +26,7 @@ const { version } = JSON.parse(
 const app = createApp({
   logger,
   cookieSecret: config.COOKIE_SECRET,
+  trustProxyHops: config.TRUST_PROXY_HOPS,
   version,
   services: {
     prisma,

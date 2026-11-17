@@ -29,6 +29,13 @@ const envSchema = z.object({
     }),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
+  /**
+   * How many proxies stand in front of the API. The client's address is read
+   * that many hops back in X-Forwarded-For; too few and every visitor shares the
+   * proxy's address (and one rate limit), too many and a client can forge it.
+   * 1 behind the bundled nginx; 2 with a TLS proxy such as Caddy in front of it.
+   */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   /** Where lesson media is read from. Defaults to api/media. */
   MEDIA_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

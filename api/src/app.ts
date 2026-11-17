@@ -26,13 +26,15 @@ export interface AppDeps {
   version: string;
   services: Services;
   auth?: AuthRouterOptions;
+  /** Proxies in front of the API; see TRUST_PROXY_HOPS. */
+  trustProxyHops?: number;
 }
 
 export function createApp(deps: AppDeps): Express {
   const app = express();
 
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  app.set('trust proxy', deps.trustProxyHops ?? 1);
 
   app.use(
     pinoHttp({

@@ -33,6 +33,14 @@ describe('loadConfig', () => {
   });
 });
 
+describe('proxy hops', () => {
+  it('defaults to the bundled nginx and refuses nonsense', () => {
+    expect(loadConfig(valid).TRUST_PROXY_HOPS).toBe(1);
+    expect(loadConfig({ ...valid, TRUST_PROXY_HOPS: '2' }).TRUST_PROXY_HOPS).toBe(2);
+    expect(() => loadConfig({ ...valid, TRUST_PROXY_HOPS: '-1' })).toThrow(/TRUST_PROXY_HOPS/);
+  });
+});
+
 describe('the compose file', () => {
   it('asks for every secret instead of falling back to one in the repository', () => {
     const compose = readFileSync(new URL('../../docker-compose.yml', import.meta.url), 'utf8');

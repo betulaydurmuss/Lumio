@@ -285,6 +285,32 @@ describe('CSRF', () => {
   });
 });
 
+describe('behind proxies', () => {
+  // supertest connects from 127.0.0.1, which stands for the nearest proxy.
+  const signInFrom = async (hops: number) => {
+    const app = buildApp({ trustProxyHops: hops });
+    const { email, user } = await signedInUser(app);
+    const client = await new Client(app.app).init();
+    await client.agent
+      .post('/api/auth/login')
+      .set('x-csrf-token', client.csrf)
+      .set('X-Forwarded-For', '198.51.100.7, 10.0.0.2')
+      .send({ email, password: 'wrong password!!' });
+    const entry = await app.prisma.auditLog.findFirstOrThrow({
+      where: { actorId: user.id, action: 'auth.login_failed' },
+    });
+    return entry.ipAddress;
+  };
+
+  it('reads the client address one hop back behind nginx alone', async () => {
+    expect(await signInFrom(1)).toBe('10.0.0.2');
+  });
+
+  it('reads it two hops back with a TLS proxy in front of nginx', async () => {
+    expect(await signInFrom(2)).toBe('198.51.100.7');
+  });
+});
+
 describe('bad requests', () => {
   it("answers broken or oversized JSON as the client's mistake, not the server's", async () => {
     const client = await new Client(ctx.app).init();

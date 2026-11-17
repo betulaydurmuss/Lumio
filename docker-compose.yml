@@ -74,6 +74,7 @@ services:
     environment:
       <<: *app-env
       API_PORT: 4000
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
       COOKIE_SECRET: ${COOKIE_SECRET:?run npm run env:init, or set COOKIE_SECRET in .env}
       ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:?run npm run env:init, or set ACCESS_TOKEN_SECRET in .env}
