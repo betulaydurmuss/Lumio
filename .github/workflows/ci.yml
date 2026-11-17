@@ -116,6 +116,13 @@ jobs:
       - name: Health check through the web proxy
         run: curl --fail --silent --show-error http://127.0.0.1:8080/api/health
 
+      # A backup only counts once it has been restored: dump, load into a scratch
+      # database, and compare every table's row count with the live one.
+      - name: Back up and prove the backup restores
+        run: |
+          npm run backup
+          npm run backup:verify -- "$(ls -t backups/*.dump | head -1)"
+
       - name: Logs on failure
         if: failure()
         run: docker compose logs

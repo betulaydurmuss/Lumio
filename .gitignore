@@ -10,6 +10,9 @@ coverage/
 !.env.example
 
 *.log
+
+# database backups hold personal data
+backups/
 npm-debug.log*
 
 .DS_Store
