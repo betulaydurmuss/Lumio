@@ -65,7 +65,11 @@ export function PriceTag({ course }: { course: Pick<Course, 'price'> }) {
 interface CourseCardProps {
   course: Course;
   /** For the learner's own courses: shows progress instead of the price and opens the player. */
-  learning?: { percent: number; href: string };
+  learning?: {
+    percent: number;
+    href: string;
+    assignment?: { dueOn: string | null; overdue: boolean } | null;
+  };
 }
 
 export function CourseCard({ course, learning }: CourseCardProps) {
@@ -109,7 +113,21 @@ export function CourseCard({ course, learning }: CourseCardProps) {
             </div>
           )}
           <div className="foot">
-            {learning ? (
+            {learning?.assignment ? (
+              <span
+                className={`badge ${learning.assignment.overdue ? 'badge-danger' : 'badge-new'}`}
+              >
+                {learning.assignment.overdue
+                  ? t('card.overdue')
+                  : learning.assignment.dueOn
+                    ? t('card.dueOn', {
+                        date: new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+                          new Date(`${learning.assignment.dueOn}T12:00:00`),
+                        ),
+                      })
+                    : t('card.assigned')}
+              </span>
+            ) : learning ? (
               <span className="badge badge-pop">{t('card.enrolled')}</span>
             ) : (
               <PriceTag course={course} />

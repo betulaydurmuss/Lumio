@@ -172,6 +172,10 @@ code,
   background: var(--info-bg);
   color: var(--info);
 }
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
 .badge-soft {
   background: var(--bg);
   color: var(--muted);

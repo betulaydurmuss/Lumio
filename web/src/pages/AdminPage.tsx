@@ -4,11 +4,12 @@ import { Link, useSearchParams } from 'react-router';
 import { useAuditLog, useOrgStats } from '../api/admin.js';
 import { useOrgCertificates, useRevokeCertificate } from '../api/certificates.js';
 import { ApiError } from '../api/client.js';
+import { AssignmentsPanel } from '../components/admin/AssignmentsPanel.js';
 import { MembersPanel } from '../components/admin/MembersPanel.js';
 import { StatTiles, StatTilesSkeleton } from '../components/admin/StatTiles.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 
-const TABS = ['overview', 'members', 'certificates', 'audit'] as const;
+const TABS = ['overview', 'members', 'assignments', 'certificates', 'audit'] as const;
 type Tab = (typeof TABS)[number];
 
 function formatDate(value: string, locale: string) {
@@ -117,6 +118,7 @@ export function AdminPage() {
                 <StatTilesSkeleton count={6} />
               ))}
             {tab === 'members' && <MembersPanel />}
+            {tab === 'assignments' && <AssignmentsPanel />}
             {tab === 'certificates' && <CertificatesCard />}
             {tab === 'audit' && <AuditCard />}
           </div>

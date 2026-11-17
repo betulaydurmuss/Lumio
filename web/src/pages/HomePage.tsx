@@ -32,6 +32,7 @@ function ContinueRail() {
               course={item.course}
               learning={{
                 percent: item.progress.percent,
+                assignment: item.assignment,
                 href: item.resumeLessonId
                   ? `/learn/${item.course.slug}/${item.resumeLessonId}`
                   : `/learn/${item.course.slug}`,
