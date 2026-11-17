@@ -76,29 +76,32 @@ anything of the other's. Turning the scope off makes those tests fail.
 
 ### Security review
 
-The code was reviewed twice by tracing each entry point to the data it reaches, looking for ways
+The code was reviewed three times by tracing each entry point to the data it reaches, looking for ways
 around the guarantees above. The second review ran the leads against the code in an isolated
 container. Every lead was first turned into a test that failed, then fixed, and the test now
 guards the fix. What was found and changed:
 
-| Lead                                                                              | Fix                                                                                               |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| An admin who was demoted kept their pending admin invitations and could come back | Demoting or deactivating revokes their invitations; accepting checks the sender is still an admin |
-| An unverified sign-up could hold someone else's address                           | A newer sign-up, an invitation or a reset replaces it; verifying needs the registrant's password  |
-| Re-entering the password reset the counter for code guesses                       | The counter resets only after the whole sign-in succeeds                                          |
-| Guesses sent together were counted as one                                         | Each attempt is taken from the counter atomically, before it is checked                           |
-| Anyone could keep an account locked                                               | The owner can reset the password, which opens the account                                         |
-| Compose started on secrets written in the repository                              | Compose requires them; `npm run env:init` writes fresh random ones; example values are refused    |
-| Concurrent final exam attempts could exceed three a day                           | The count and the new attempt are one locked step                                                 |
-| Two admins demoting each other at once could leave nobody in charge               | Membership changes in an organization run one at a time                                           |
-| Names could carry line breaks into emails                                         | Names refuse control characters                                                                   |
-| Drawing a certificate held up every other request for up to a second              | PNG and PDF are drawn on a worker thread and kept in memory                                       |
-| Popular searches could carry words no course was matched on                       | Only the words a search was matched on are remembered                                             |
-| A video could be marked watched at once by sending its end position               | The server also checks how long ago the video was started                                         |
-| A refresh token presented twice at once worked twice                              | Rotation is conditional, so it works once                                                         |
-| The verification mail repeated the name typed at sign-up                          | That mail carries no text from the registrant                                                     |
-| A sign-in begun with the old password could still finish after a reset            | The pending step carries a fingerprint of the password it was won with                            |
-| Running the demo seed again republished a course the operator had taken down      | The seed leaves an existing course's status alone                                                 |
+| Lead                                                                              | Fix                                                                                                            |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| An admin who was demoted kept their pending admin invitations and could come back | Demoting or deactivating revokes their invitations; accepting checks the sender is still an admin              |
+| An unverified sign-up could hold someone else's address                           | Each sign-up gets its own link carrying its own password; an invitation or a reset also takes the address back |
+| Re-entering the password reset the counter for code guesses                       | The counter resets only after the whole sign-in succeeds                                                       |
+| Guesses sent together were counted as one                                         | Each attempt is taken from the counter atomically, before it is checked                                        |
+| Anyone could keep an account locked                                               | The owner can reset the password, which opens the account                                                      |
+| Compose started on secrets written in the repository                              | Compose requires them; `npm run env:init` writes fresh random ones; example values are refused                 |
+| Concurrent final exam attempts could exceed three a day                           | The count and the new attempt are one locked step                                                              |
+| Two admins demoting each other at once could leave nobody in charge               | Membership changes in an organization run one at a time                                                        |
+| Names could carry line breaks into emails                                         | Names refuse control characters                                                                                |
+| Drawing a certificate held up every other request for up to a second              | PNG and PDF are drawn on a worker thread and kept in memory                                                    |
+| Popular searches could carry words no course was matched on                       | Only the words a search was matched on are remembered                                                          |
+| A video could be marked watched at once by sending its end position               | The server also checks how long ago the video was started                                                      |
+| A refresh token presented twice at once worked twice                              | Rotation is conditional, so it works once                                                                      |
+| The verification mail repeated the name typed at sign-up                          | That mail carries no text from the registrant                                                                  |
+| A sign-in begun with the old password could still finish after a reset            | The pending step carries a fingerprint of the password it was won with                                         |
+| Running the demo seed again republished a course the operator had taken down      | The seed leaves an existing course's status alone                                                              |
+| Mail to the relay could fall back to plain text if STARTTLS was not offered       | The worker refuses any relay connection without TLS; only the local mail catcher is exempt                     |
+| Signing up again voided the links the address owner already held                  | Earlier sign-ups and their links stay valid until the address is proved                                        |
+| Sign-in told an unverified account apart from a wrong password                    | Both get the same answer, so a planted password reveals nothing                                                |
 
 Smaller changes from the same review: tokens and verification codes are kept out of API and
 nginx access logs, a media link cannot claim a lifetime longer than the server ever signs,
