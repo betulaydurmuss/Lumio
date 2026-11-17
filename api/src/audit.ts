@@ -28,7 +28,11 @@ export type AuditAction =
   | 'member.deactivated'
   | 'member.reactivated'
   | 'course.published'
-  | 'course.unpublished';
+  | 'course.unpublished'
+  | 'course.updated'
+  | 'category.created'
+  | 'category.updated'
+  | 'category.deleted';
 
 export interface AuditEntry {
   orgId: string | null;
