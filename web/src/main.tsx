@@ -37,6 +37,7 @@ import { PlatformPage } from './pages/PlatformPage.js';
 import { PlayerPage } from './pages/PlayerPage.js';
 import { SignInPage } from './pages/SignInPage.js';
 import { SignUpPage } from './pages/SignUpPage.js';
+import { PrivacyPage } from './pages/PrivacyPage.js';
 import { TranscriptPage } from './pages/TranscriptPage.js';
 import { VerifyPage } from './pages/VerifyPage.js';
 
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: 'invite', element: <InvitePage /> },
+      { path: 'privacy', element: <PrivacyPage /> },
       {
         element: <RequireAuth />,
         children: [

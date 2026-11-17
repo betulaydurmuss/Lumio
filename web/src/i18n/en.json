@@ -11,7 +11,8 @@
     "certificates": "My certificates",
     "verify": "Verify a certificate",
     "platform": "Platform",
-    "transcript": "Transcript"
+    "transcript": "Transcript",
+    "privacy": "Privacy"
   },
   "home": {
     "pill": "Web · Cybersecurity · KVKK",
@@ -114,7 +115,10 @@
     "submit": "Create account",
     "haveAccount": "Already have an account?",
     "signIn": "Sign in",
-    "companyNote": "Whoever opens a company account becomes its admin and must turn on two-factor authentication."
+    "companyNote": "Whoever opens a company account becomes its admin and must turn on two-factor authentication.",
+    "marketing": "Email me about new courses and offers (optional; you can change this at any time).",
+    "privacy": "How we handle your data:",
+    "privacyLink": "privacy notice"
   },
   "checkEmail": {
     "title": "Check your email",
@@ -564,5 +568,36 @@
     "completedOn": "Completed {{date}}",
     "percent": "{{percent}}% done",
     "foot": "Certificate numbers can be checked at /dogrula. This transcript lists courses taken on Lumio."
+  },
+  "notifications": {
+    "title_one": "Notifications, {{count}} unread",
+    "title_other": "Notifications, {{count}} unread",
+    "heading": "Notifications",
+    "markAll": "Mark all as read",
+    "empty": "Nothing new.",
+    "course_assigned": "Your organization assigned you “{{course}}”.",
+    "course_assigned_due": "Your organization assigned you “{{course}}”, due {{due}}.",
+    "certificate_issued": "Your certificate {{certNo}} for “{{course}}” is ready.",
+    "password_changed": "Your password was changed and every device was signed out. If this was not you, reset it now.",
+    "two_factor_enabled": "Two-factor authentication was turned on for your account."
+  },
+  "privacy": {
+    "title": "Privacy and consent",
+    "lead": "Choose what we may send you, and take a copy of everything we hold about you.",
+    "notice": "Read the privacy notice",
+    "marketing": "Email me about new courses and offers",
+    "history": "Consent history",
+    "granted": "given",
+    "withdrawn": "withdrawn",
+    "version": "notice version {{version}}",
+    "export": "Download my data",
+    "exportHint": "A JSON file with your account, learning records, sessions and consents.",
+    "manage": "Manage your consents and download your data"
+  },
+  "cookies": {
+    "label": "Cookies",
+    "text": "Lumio uses only the cookies it needs to work: your session and its security. No analytics or advertising cookies.",
+    "more": "Learn more",
+    "ok": "Got it"
   }
 }

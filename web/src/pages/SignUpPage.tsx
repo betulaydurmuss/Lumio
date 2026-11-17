@@ -27,6 +27,7 @@ export function SignUpPage() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const register = useMutation({
     mutationFn: () =>
@@ -37,6 +38,7 @@ export function SignUpPage() {
         email,
         password,
         locale: (i18n.resolvedLanguage ?? 'tr') as Locale,
+        marketingConsent,
       }),
     onSuccess: () => void navigate('/check-email', { state: { email } }),
   });
@@ -132,6 +134,18 @@ export function SignUpPage() {
             {t('signUp.passwordHint')}
           </p>
         </div>
+
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(event) => setMarketingConsent(event.target.checked)}
+          />
+          <span>{t('signUp.marketing')}</span>
+        </label>
+        <p className="hint">
+          {t('signUp.privacy')} <Link to="/privacy">{t('signUp.privacyLink')}</Link>
+        </p>
 
         <button className="btn btn-accent btn-block" type="submit" disabled={register.isPending}>
           {register.isPending ? t('common.loading') : t('signUp.submit')}

@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { authApi, meQueryKey, useMe } from '../api/auth.js';
 import { setLocale } from '../i18n/index.js';
+import { CookieNotice } from './CookieNotice.js';
 import { Logo } from './Logo.js';
+import { NotificationBell } from './NotificationBell.js';
 import { StatusLine } from './StatusLine.js';
 
 function LanguageSwitch() {
@@ -57,6 +59,7 @@ function AccountNav() {
         <NavLink to="/admin">{t('nav.admin')}</NavLink>
       )}
       {me.data.role === 'platform_admin' && <NavLink to="/platform">{t('nav.platform')}</NavLink>}
+      <NotificationBell />
       <NavLink to="/certificates">{t('nav.certificates')}</NavLink>
       <NavLink to="/transcript">{t('nav.transcript')}</NavLink>
       <NavLink to="/account">{t('nav.account')}</NavLink>
@@ -91,11 +94,13 @@ export function Layout() {
         <div className="wrap">
           <span>
             {t('footer.rights', { year: new Date().getFullYear() })} · {t('footer.tagline')} ·{' '}
-            <Link to="/dogrula">{t('nav.verify')}</Link>
+            <Link to="/dogrula">{t('nav.verify')}</Link> ·{' '}
+            <Link to="/privacy">{t('nav.privacy')}</Link>
           </span>
           <StatusLine />
         </div>
       </footer>
+      <CookieNotice />
     </>
   );
 }

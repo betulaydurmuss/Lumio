@@ -1,9 +1,11 @@
 import type { Me } from '@lumio/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CircleCheck, Monitor, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { CircleCheck, Download, Monitor, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { authApi, useMe, useRefreshMe } from '../api/auth.js';
+import { DATA_EXPORT_HREF, useConsents, useUpdateConsents } from '../api/me.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 
 function formatDate(value: string, locale: string) {
@@ -208,6 +210,59 @@ function SessionsCard() {
   );
 }
 
+function PrivacyCard() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? 'tr';
+  const consents = useConsents();
+  const update = useUpdateConsents();
+
+  return (
+    <article className="card">
+      <h3>{t('privacy.title')}</h3>
+      <p className="hint">
+        {t('privacy.lead')} <Link to="/privacy">{t('privacy.notice')}</Link>
+      </p>
+      {consents.isError && <ErrorAlert error={consents.error} />}
+      {update.error && <ErrorAlert error={update.error} />}
+      {consents.data && (
+        <>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={consents.data.marketingEmail}
+              disabled={update.isPending}
+              onChange={(event) => update.mutate({ marketingEmail: event.target.checked })}
+            />
+            <span>{t('privacy.marketing')}</span>
+          </label>
+          {consents.data.history.length > 0 && (
+            <details className="consent-history">
+              <summary>{t('privacy.history')}</summary>
+              <ul>
+                {consents.data.history.map((row) => (
+                  <li key={row.createdAt}>
+                    {new Intl.DateTimeFormat(locale, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }).format(new Date(row.createdAt))}{' '}
+                    · {row.granted ? t('privacy.granted') : t('privacy.withdrawn')} ·{' '}
+                    {t('privacy.version', { version: row.noticeVersion })}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </>
+      )}
+      <a className="btn btn-secondary btn-sm" href={DATA_EXPORT_HREF} download>
+        <Download size={14} aria-hidden="true" />
+        {t('privacy.export')}
+      </a>
+      <p className="hint">{t('privacy.exportHint')}</p>
+    </article>
+  );
+}
+
 export function AccountPage() {
   const { t } = useTranslation();
   const me = useMe().data;
@@ -229,6 +284,7 @@ export function AccountPage() {
       <div className="stack">
         <TwoFactorCard me={me} />
         <SessionsCard />
+        <PrivacyCard />
       </div>
     </div>
   );

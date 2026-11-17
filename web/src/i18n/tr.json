@@ -11,7 +11,8 @@
     "certificates": "Sertifikalarım",
     "verify": "Sertifika doğrula",
     "platform": "Platform",
-    "transcript": "Karnem"
+    "transcript": "Karnem",
+    "privacy": "Gizlilik ve KVKK"
   },
   "home": {
     "pill": "Web · Siber güvenlik · KVKK",
@@ -114,7 +115,10 @@
     "submit": "Hesap oluştur",
     "haveAccount": "Zaten hesabın var mı?",
     "signIn": "Giriş yap",
-    "companyNote": "Kurum hesabını açan kişi kurumun yöneticisi olur ve iki adımlı doğrulamayı açması gerekir."
+    "companyNote": "Kurum hesabını açan kişi kurumun yöneticisi olur ve iki adımlı doğrulamayı açması gerekir.",
+    "marketing": "Yeni kurslar ve kampanyalar hakkında e-posta almak istiyorum (isteğe bağlı; istediğin zaman değiştirebilirsin).",
+    "privacy": "Verilerini nasıl işlediğimiz:",
+    "privacyLink": "aydınlatma metni"
   },
   "checkEmail": {
     "title": "E-postanı kontrol et",
@@ -564,5 +568,36 @@
     "completedOn": "{{date}} tamamlandı",
     "percent": "%{{percent}} tamamlandı",
     "foot": "Sertifika numaraları /dogrula adresinden doğrulanabilir. Bu karne Lumio'da alınan kursları listeler."
+  },
+  "notifications": {
+    "title_one": "Bildirimler, {{count}} okunmamış",
+    "title_other": "Bildirimler, {{count}} okunmamış",
+    "heading": "Bildirimler",
+    "markAll": "Tümünü okundu say",
+    "empty": "Yeni bir şey yok.",
+    "course_assigned": "Kurumun sana “{{course}}” eğitimini atadı.",
+    "course_assigned_due": "Kurumun sana “{{course}}” eğitimini atadı, son tarih {{due}}.",
+    "certificate_issued": "“{{course}}” için {{certNo}} numaralı sertifikan hazır.",
+    "password_changed": "Şifren değiştirildi ve tüm cihazlarda oturumun kapatıldı. Bunu sen yapmadıysan hemen şifreni yenile.",
+    "two_factor_enabled": "Hesabında iki adımlı doğrulama açıldı."
+  },
+  "privacy": {
+    "title": "Gizlilik ve izinler",
+    "lead": "Sana ne gönderebileceğimizi seç ve hakkında tuttuğumuz her şeyin kopyasını al.",
+    "notice": "Aydınlatma metnini oku",
+    "marketing": "Yeni kurslar ve kampanyalar hakkında e-posta almak istiyorum",
+    "history": "İzin geçmişi",
+    "granted": "verildi",
+    "withdrawn": "geri alındı",
+    "version": "metin sürümü {{version}}",
+    "export": "Verilerimi indir",
+    "exportHint": "Hesabın, öğrenme kayıtların, oturumların ve izinlerinle bir JSON dosyası.",
+    "manage": "İzinlerini yönet ve verilerini indir"
+  },
+  "cookies": {
+    "label": "Çerezler",
+    "text": "Lumio yalnızca çalışması için gereken çerezleri kullanır: oturumun ve güvenliği. Analitik ya da reklam çerezi yoktur.",
+    "more": "Ayrıntılar",
+    "ok": "Anladım"
   }
 }
