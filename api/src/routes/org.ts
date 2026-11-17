@@ -23,27 +23,63 @@ import {
 } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
 import { hashToken, randomToken } from '../security/crypto.js';
+import type { PrismaClient } from '../db.js';
 import type { Services } from '../services.js';
 
 const idParam = z.uuid();
 
+type Tx = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
+
+/**
+ * Runs a membership change for one organization, one at a time. The lock makes
+ * "is there another admin left?" and the change itself a single step, so two
+ * admins demoting each other at the same moment cannot leave nobody in charge.
+ * The actor's own authority is read again inside the lock: their request may
+ * have been authorised just before someone else demoted them.
+ */
+async function withOrgAdminLock<T>(
+  prisma: PrismaClient,
+  context: AuthContext,
+  change: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`org-admins:${context.orgId}`}))`;
+    const actor = await tx.user.findFirst({
+      where: {
+        id: context.userId,
+        orgId: context.orgId,
+        disabledAt: null,
+        role: { in: ['org_admin', 'platform_admin'] },
+      },
+    });
+    if (!actor) throw new HttpError(403, 'forbidden', 'Not allowed');
+    return change(tx);
+  });
+}
+
 /**
  * The member an admin is about to change, checked against the rules every
  * change shares: never yourself, never a platform admin, and never the last
- * active admin of the organization.
+ * active admin of the organization. Every query names the organization: this
+ * runs on the transaction client, which the tenant scope does not wrap.
  */
-async function changeableMember(context: AuthContext, id: string, demotesAdmin: boolean) {
+async function changeableMember(tx: Tx, context: AuthContext, id: string, demotesAdmin: boolean) {
   if (id === context.userId) {
     throw new HttpError(409, 'cannot_change_self', 'You cannot change your own account here');
   }
-  const member = await context.db.user.findUnique({ where: { id } });
+  const member = await tx.user.findFirst({ where: { id, orgId: context.orgId } });
   if (!member) throw new HttpError(404, 'not_found', 'Member not found');
   if (member.role === 'platform_admin') {
     throw new HttpError(403, 'forbidden', 'Platform admins are managed by the platform');
   }
   if (demotesAdmin && member.role === 'org_admin') {
-    const otherAdmins = await context.db.user.count({
-      where: { role: 'org_admin', disabledAt: null, id: { not: member.id } },
+    const otherAdmins = await tx.user.count({
+      where: {
+        orgId: context.orgId,
+        role: 'org_admin',
+        disabledAt: null,
+        id: { not: member.id },
+      },
     });
     if (otherAdmins === 0) {
       throw new HttpError(409, 'last_admin', 'An organization needs at least one active admin');
@@ -116,14 +152,24 @@ export function orgRouter(services: Services): Router {
   router.patch('/members/:id/role', async (req, res) => {
     const context = auth(req);
     const { role } = changeRoleSchema.parse(req.body);
-    const member = await changeableMember(
-      context,
-      idParam.parse(req.params.id),
-      role !== 'org_admin',
-    );
-    if (member.role !== role) {
-      await context.db.user.update({ where: { id: member.id }, data: { role } });
-      await audit(context.db, {
+    const id = idParam.parse(req.params.id);
+    await withOrgAdminLock(services.prisma, context, async (tx) => {
+      const member = await changeableMember(tx, context, id, role !== 'org_admin');
+      if (member.role === role) return;
+      await tx.user.update({ where: { id: member.id }, data: { role } });
+      if (member.role === 'org_admin') {
+        // Their pending invitations were sent with authority they no longer have.
+        await tx.invitation.updateMany({
+          where: {
+            orgId: context.orgId,
+            invitedById: member.id,
+            acceptedAt: null,
+            revokedAt: null,
+          },
+          data: { revokedAt: new Date() },
+        });
+      }
+      await audit(tx, {
         orgId: context.orgId,
         actorId: context.userId,
         action: 'member.role_changed',
@@ -132,22 +178,29 @@ export function orgRouter(services: Services): Router {
         ipAddress: req.ip,
         metadata: { from: member.role, to: role },
       });
-    }
+    });
     res.status(204).end();
   });
 
   router.post('/members/:id/deactivate', async (req, res) => {
     const context = auth(req);
-    const member = await changeableMember(context, idParam.parse(req.params.id), true);
-    if (!member.disabledAt) {
+    const id = idParam.parse(req.params.id);
+    await withOrgAdminLock(services.prisma, context, async (tx) => {
+      const member = await changeableMember(tx, context, id, true);
+      if (member.disabledAt) return;
       const now = new Date();
-      await context.db.user.update({ where: { id: member.id }, data: { disabledAt: now } });
+      await tx.user.update({ where: { id: member.id }, data: { disabledAt: now } });
       // Ends every session at once, not when the access token runs out.
-      await context.db.session.updateMany({
-        where: { userId: member.id, revokedAt: null },
+      await tx.session.updateMany({
+        where: { orgId: context.orgId, userId: member.id, revokedAt: null },
         data: { revokedAt: now },
       });
-      await audit(context.db, {
+      // Their pending invitations were sent with authority they no longer have.
+      await tx.invitation.updateMany({
+        where: { orgId: context.orgId, invitedById: member.id, acceptedAt: null, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await audit(tx, {
         orgId: context.orgId,
         actorId: context.userId,
         action: 'member.deactivated',
@@ -155,16 +208,18 @@ export function orgRouter(services: Services): Router {
         targetId: member.id,
         ipAddress: req.ip,
       });
-    }
+    });
     res.status(204).end();
   });
 
   router.post('/members/:id/reactivate', async (req, res) => {
     const context = auth(req);
-    const member = await changeableMember(context, idParam.parse(req.params.id), false);
-    if (member.disabledAt) {
-      await context.db.user.update({ where: { id: member.id }, data: { disabledAt: null } });
-      await audit(context.db, {
+    const id = idParam.parse(req.params.id);
+    await withOrgAdminLock(services.prisma, context, async (tx) => {
+      const member = await changeableMember(tx, context, id, false);
+      if (!member.disabledAt) return;
+      await tx.user.update({ where: { id: member.id }, data: { disabledAt: null } });
+      await audit(tx, {
         orgId: context.orgId,
         actorId: context.userId,
         action: 'member.reactivated',
@@ -172,7 +227,7 @@ export function orgRouter(services: Services): Router {
         targetId: member.id,
         ipAddress: req.ip,
       });
-    }
+    });
     res.status(204).end();
   });
 

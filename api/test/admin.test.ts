@@ -5,6 +5,7 @@ import { seedCatalog } from '../prisma/seed.js';
 import {
   buildApp,
   Client,
+  codeFor,
   PASSWORD,
   resetDatabase,
   signedInAdmin,
@@ -140,6 +141,37 @@ describe('invitations', () => {
     expect(pending.find((row) => row.email === expiring)?.expired).toBe(true);
   });
 
+  it('lets an invitation through to an address held only by an unfinished sign-up', async () => {
+    // An unverified sign-up proves nothing about the address; opening the
+    // invitation mail does.
+    const admin = await signedInAdmin(ctx);
+    const email = uniqueEmail('held');
+    await (
+      await new Client(ctx.app).init()
+    ).post('/api/auth/register', {
+      accountType: 'company',
+      organizationName: 'Squatter Ltd',
+      displayName: 'Squatter',
+      email,
+      password: 'squatter password!!',
+      locale: 'en',
+    });
+    await admin.client.post('/api/org/invitations', { email, role: 'learner' });
+
+    const res = await (
+      await new Client(ctx.app).init()
+    ).post('/api/auth/invitations/accept', {
+      token: inviteToken(email),
+      displayName: 'Real Person',
+      password: PASSWORD,
+      locale: 'en',
+    });
+    expect(res.status).toBe(201);
+    const joined = await ctx.prisma.user.findUniqueOrThrow({ where: { email } });
+    expect(joined.orgId).toBe(admin.user.orgId);
+    expect(await ctx.prisma.organization.count({ where: { name: 'Squatter Ltd' } })).toBe(0);
+  });
+
   it('refuses an address that already has an account', async () => {
     const admin = await signedInAdmin(ctx);
     const { email } = await signedInUser(ctx);
@@ -155,6 +187,63 @@ describe('invitations', () => {
     });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('email_taken');
+  });
+
+  it.each(['demoted', 'deactivated'] as const)(
+    'stops the invitations of an admin who has been %s',
+    async (change) => {
+      // A removed admin must not get their authority back through an
+      // invitation they sent to another address of their own.
+      const first = await signedInAdmin(ctx);
+      const second = await invitedMember(first.client, 'org_admin');
+      const setup = await second.client.post('/api/auth/totp/setup', { password: PASSWORD });
+      await second.client.post('/api/auth/totp/enable', { code: await codeFor(setup.body.secret) });
+      const spare = uniqueEmail('spare');
+      expect(
+        (await second.client.post('/api/org/invitations', { email: spare, role: 'org_admin' }))
+          .status,
+      ).toBe(201);
+
+      const res =
+        change === 'demoted'
+          ? await first.client.agent
+              .patch(`/api/org/members/${second.user.id}/role`)
+              .set('x-csrf-token', first.client.csrf)
+              .send({ role: 'learner' })
+          : await first.client.post(`/api/org/members/${second.user.id}/deactivate`);
+      expect(res.status).toBe(204);
+
+      const visitor = await new Client(ctx.app).init();
+      const accepted = await visitor.post('/api/auth/invitations/accept', {
+        token: inviteToken(spare),
+        displayName: 'Spare Address',
+        password: PASSWORD,
+        locale: 'en',
+      });
+      expect(accepted.status).toBe(400);
+      expect(await ctx.prisma.user.count({ where: { email: spare } })).toBe(0);
+    },
+  );
+
+  it('does not let an invitation outrank the admin who sent it', async () => {
+    // Defence at the door as well: even an invitation that escaped revocation
+    // is refused once its sender is no longer an active admin.
+    const first = await signedInAdmin(ctx);
+    const second = await invitedMember(first.client, 'org_admin');
+    const setup = await second.client.post('/api/auth/totp/setup', { password: PASSWORD });
+    await second.client.post('/api/auth/totp/enable', { code: await codeFor(setup.body.secret) });
+    const spare = uniqueEmail('spare');
+    await second.client.post('/api/org/invitations', { email: spare, role: 'org_admin' });
+    await ctx.prisma.user.update({ where: { id: second.user.id }, data: { role: 'learner' } });
+
+    const visitor = await new Client(ctx.app).init();
+    const accepted = await visitor.post('/api/auth/invitations/accept', {
+      token: inviteToken(spare),
+      displayName: 'Spare Address',
+      password: PASSWORD,
+      locale: 'en',
+    });
+    expect(accepted.status).toBe(400);
   });
 
   it('cannot hand out the platform admin role', async () => {
@@ -190,6 +279,28 @@ describe('managing members', () => {
       .send({ role: 'learner' });
     expect(self.status).toBe(409);
     expect(self.body.error.code).toBe('cannot_change_self');
+  });
+
+  it('keeps an admin even when two admins demote each other at the same moment', async () => {
+    const first = await signedInAdmin(ctx);
+    const second = await invitedMember(first.client, 'org_admin');
+    const setup = await second.client.post('/api/auth/totp/setup', { password: PASSWORD });
+    await second.client.post('/api/auth/totp/enable', { code: await codeFor(setup.body.secret) });
+
+    const demote = (actor: Client, target: string) =>
+      actor.agent
+        .patch(`/api/org/members/${target}/role`)
+        .set('x-csrf-token', actor.csrf)
+        .send({ role: 'learner' });
+    const results = await Promise.all([
+      demote(first.client, second.user.id),
+      demote(second.client, first.user.id),
+    ]);
+
+    expect(results.map((res) => res.status).sort()).toEqual([204, 403]);
+    expect(
+      await ctx.prisma.user.count({ where: { orgId: first.user.orgId, role: 'org_admin' } }),
+    ).toBe(1);
   });
 
   it('keeps at least one active admin in the organization', async () => {
