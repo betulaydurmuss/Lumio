@@ -5,6 +5,7 @@ import { AccountPage } from './pages/AccountPage.js';
 import { AdminPage } from './pages/AdminPage.js';
 import { CatalogPage } from './pages/CatalogPage.js';
 import { CertificatesPage } from './pages/CertificatesPage.js';
+import { CourseEditPage } from './pages/CourseEditPage.js';
 import { CoursePage } from './pages/CoursePage.js';
 import { CheckEmailPage, VerifyEmailPage } from './pages/EmailPages.js';
 import { HomePage } from './pages/HomePage.js';
@@ -57,6 +58,11 @@ export const routes: RouteObject[] = [
           { path: 'account', element: <AccountPage />, ...titled('nav.account') },
           { path: 'admin', element: <AdminPage />, ...titled('nav.admin') },
           { path: 'platform', element: <PlatformPage />, ...titled('nav.platform') },
+          {
+            path: 'platform/courses/:slug',
+            element: <CourseEditPage />,
+            ...titled('courseEdit.title'),
+          },
           { path: 'certificates', element: <CertificatesPage />, ...titled('nav.certificates') },
           { path: 'transcript', element: <TranscriptPage />, ...titled('transcript.title') },
           {

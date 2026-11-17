@@ -503,7 +503,8 @@
     "draft": "Yayında değil",
     "unpublish": "Yayından kaldır",
     "publish": "Yayınla",
-    "personalAccount": "Bireysel hesap"
+    "personalAccount": "Bireysel hesap",
+    "edit": "Düzenle"
   },
   "forgot": {
     "title": "Şifreni mi unuttun?",
@@ -619,5 +620,39 @@
   "pageTitles": {
     "invite": "Davet",
     "notFound": "Sayfa bulunamadı"
+  },
+  "courseEdit": {
+    "title": "Kursu düzenle",
+    "lead": "Katalogda ve kurs sayfasında yazanlar. Dersler, sınavlar ve fiyat olduğu gibi kalır.",
+    "fieldTitle": "Başlık",
+    "subtitle": "Alt başlık",
+    "description": "Açıklama",
+    "category": "Kategori",
+    "level": "Seviye",
+    "certificate": "Kursu bitiren sertifika alır",
+    "note": "Daha önce verilen sertifikalar imzalandıkları başlığı korur; yenileri yeni başlığı taşır.",
+    "save": "Kaydet",
+    "saved": "Kaydedildi. Katalog yeni metni şimdi gösteriyor.",
+    "view": "Kurs sayfasını gör"
+  },
+  "categories": {
+    "title": "Kategoriler",
+    "lead": "İki seviye. Bir kategori, onu kullanan kurs ya da alt kategori kalmadığında silinebilir.",
+    "name": "Ad",
+    "courses": "Kurs",
+    "nameTr": "Ad (TR)",
+    "nameEn": "Ad (EN)",
+    "slug": "Adres",
+    "slugHint": "Küçük harf, rakam ve tire; örneğin bulut-guvenligi",
+    "parent": "Üst kategori",
+    "topLevel": "En üst seviye",
+    "add": "Kategori ekle",
+    "new": "Yeni kategori",
+    "rename": "Yeniden adlandır",
+    "save": "Kaydet",
+    "cancel": "Vazgeç",
+    "delete": "Sil",
+    "inUse": "Kursu ya da alt kategorisi var",
+    "deleteConfirm": "“{{name}}” kategorisi silinsin mi?"
   }
 }

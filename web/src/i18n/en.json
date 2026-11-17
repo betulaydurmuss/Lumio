@@ -503,7 +503,8 @@
     "draft": "Not published",
     "unpublish": "Unpublish",
     "publish": "Publish",
-    "personalAccount": "Personal account"
+    "personalAccount": "Personal account",
+    "edit": "Edit"
   },
   "forgot": {
     "title": "Forgot your password?",
@@ -619,5 +620,39 @@
   "pageTitles": {
     "invite": "Invitation",
     "notFound": "Page not found"
+  },
+  "courseEdit": {
+    "title": "Edit course",
+    "lead": "What the catalog and the course page say. Lessons, quizzes and the price stay as they are.",
+    "fieldTitle": "Title",
+    "subtitle": "Subtitle",
+    "description": "Description",
+    "category": "Category",
+    "level": "Level",
+    "certificate": "Completing the course earns a certificate",
+    "note": "Certificates already issued keep the title they were signed with; new ones carry the new title.",
+    "save": "Save",
+    "saved": "Saved. The catalog shows the new text now.",
+    "view": "View the course page"
+  },
+  "categories": {
+    "title": "Categories",
+    "lead": "Two levels. A category can only be deleted once no course or subcategory uses it.",
+    "name": "Name",
+    "courses": "Courses",
+    "nameTr": "Name (TR)",
+    "nameEn": "Name (EN)",
+    "slug": "Address",
+    "slugHint": "Lower-case letters, digits and dashes, e.g. cloud-security",
+    "parent": "Under",
+    "topLevel": "Top level",
+    "add": "Add category",
+    "new": "New category",
+    "rename": "Rename",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "inUse": "Has courses or subcategories",
+    "deleteConfirm": "Delete the category “{{name}}”?"
   }
 }

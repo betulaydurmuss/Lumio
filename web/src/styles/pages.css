@@ -696,3 +696,38 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Catalog editing */
+.course-edit {
+  display: grid;
+  gap: 16px;
+}
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.course-edit textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.subcategory {
+  padding-left: 28px !important;
+}
+.category-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+  gap: 12px;
+}

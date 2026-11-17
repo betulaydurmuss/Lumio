@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { usePlatformCourses, usePlatformOverview, useSetCourseStatus } from '../api/admin.js';
 import { useLocale } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
+import { CategoriesCard } from '../components/admin/CategoriesCard.js';
 import { StatTiles, StatTilesSkeleton } from '../components/admin/StatTiles.js';
 import { ErrorAlert } from '../components/ErrorAlert.js';
 import { formatCount } from '../lib/format.js';
@@ -123,7 +124,13 @@ export function PlatformPage() {
                           </td>
                           <td className="mono">{formatCount(course.enrollmentCount, locale)}</td>
                           <td className="mono">{formatCount(course.completionCount, locale)}</td>
-                          <td>
+                          <td className="row-actions">
+                            <Link
+                              to={`/platform/courses/${course.slug}`}
+                              className="btn btn-ghost btn-sm"
+                            >
+                              {t('platform.edit')}
+                            </Link>
                             <button
                               type="button"
                               className={`btn btn-sm ${published ? 'btn-ghost' : 'btn-secondary'}`}
@@ -146,6 +153,8 @@ export function PlatformPage() {
               </div>
             )}
           </article>
+
+          <CategoriesCard />
         </div>
       )}
     </div>
