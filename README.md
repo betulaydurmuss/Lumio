@@ -124,6 +124,28 @@ cover them instead.
 Fonts are served from the platform itself, so a visitor's browser does not contact a third-party
 font service.
 
+### KVKK: notice, consent and access
+
+- **Privacy notice.** `/privacy` is the KVKK article 10 notice in Turkish and English: what is
+  processed, on which legal ground, who sees it, how long it is kept and which rights apply. It
+  carries a version, and every consent is stored with the version the member saw.
+- **Consent.** Marketing email is the only processing that needs explicit consent. It is a
+  separate, unticked box at sign-up, never a condition of the account, and can be changed from
+  the account page at any time. Each change is a new row, so the history shows who agreed to
+  which notice and when.
+- **Cookies.** Only the session and CSRF cookies are set, which need no consent. A one-time notice
+  says so rather than offering choices that would change nothing.
+- **Right of access.** "Download my data" on the account page returns everything held about the
+  member as one JSON file, without password, token or two-factor secrets. Each export is in the
+  audit log.
+
+### Notifications
+
+A bell in the header shows what is new: a course assigned by the organization, a certificate
+issued, a password changed, two-factor authentication turned on. Only structured values are
+stored (a course, a date, a certificate number); the sentence is put together from translations
+in the reader's language, so no free text travels through a notification.
+
 ## The catalog, the player and the certificate
 
 The catalog is public. Courses are filtered by category (a parent category includes its
