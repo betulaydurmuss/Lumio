@@ -9,6 +9,7 @@ import {
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { audit } from '../audit.js';
+import { learningStats } from '../learning/stats.js';
 import { auth, requireAuth, type AuthContext } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
 import type { Services } from '../services.js';
@@ -69,6 +70,11 @@ export function meRouter(services: Services): Router {
       data: { readAt: new Date() },
     });
     res.status(204).end();
+  });
+
+  router.get('/stats', async (req, res) => {
+    const context = auth(req);
+    res.json(await learningStats(context.db, context.userId));
   });
 
   router.get('/consents', async (req, res) => {
